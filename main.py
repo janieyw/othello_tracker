@@ -1,16 +1,25 @@
-# This is a sample Python script.
+import cv2 as cv
 
-# Press ⌃R to execute it or replace it with your code.
-# Press Double ⇧ to search everywhere for classes, files, tool windows, actions, and settings.
+# open the default camera
+vid = cv.VideoCapture(0)
 
+while True:
+    # read the frame from the camera
+    ret, frame = vid.read()
 
-def print_hi(name):
-    # Use a breakpoint in the code line below to debug your script.
-    print(f'Hi, {name}')  # Press ⌘F8 to toggle the breakpoint.
+    # convert the frame to grayscale
+    gray = cv.cvtColor(frame, cv.COLOR_BGR2GRAY)
 
+    # threshold the grayscale image to obtain a binary image
+    ret, binary = cv.threshold(gray, 127, 255, cv.THRESH_BINARY)
 
-# Press the green button in the gutter to run the script.
-if __name__ == '__main__':
-    print_hi('PyCharm')
+    # display the binary image
+    cv.imshow('Binary Image', binary)
 
-# See PyCharm help at https://www.jetbrains.com/help/pycharm/
+    # exit the loop if the 'q' key is pressed
+    if cv.waitKey(1) & 0xFF == ord('q'):
+        break
+
+# release the camera and close all windows
+vid.release()
+cv.destroyAllWindows()
