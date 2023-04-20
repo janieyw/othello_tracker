@@ -10,8 +10,26 @@ while True:
     # Capture a frame from the camera
     ret, frame = cap.read()
 
-    # Convert the color frame to grayscale
-    gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+    # Convert the color frame to HSV color space
+    hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
+
+    # Define the lower and upper bounds of the green color in HSV color space
+    lower_green = np.array([40, 50, 50])
+    upper_green = np.array([80, 255, 255])
+
+    # Threshold the HSV image to get a binary mask of the green area
+    mask = cv2.inRange(hsv, lower_green, upper_green)
+
+    # Apply morphology operations to remove noise and fill gaps in the mask
+    kernel = np.ones((5, 5), np.uint8)
+    mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, kernel)
+    mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, kernel)
+
+    # Apply the mask to the original frame to get the segmented image
+    segmented = cv2.bitwise_and(frame, frame, mask=mask)
+
+    # Convert the segmented image to grayscale
+    gray = cv2.cvtColor(segmented, cv2.COLOR_BGR2GRAY)
 
     # Apply edge detection to the grayscale image
     edges = cv2.Canny(gray, 50, 150, apertureSize=3)
