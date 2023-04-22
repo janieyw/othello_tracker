@@ -57,19 +57,36 @@ while True:
         # Find the bounding box of the contour
         x, y, w, h = cv2.boundingRect(contour)
 
-        # Draw a circle around the contour and label it as white or black
+        # Extract the ROI corresponding to the contour
         roi = frame[y:y + h, x:x + w]
-        hsv_roi = cv2.cvtColor(roi, cv2.COLOR_BGR2HSV)
-        avg_hue = np.average(hsv_roi[:, :, 0])
-        if avg_hue > 80:
+
+        # Convert the ROI to grayscale
+        gray_roi = cv2.cvtColor(roi, cv2.COLOR_BGR2GRAY)
+
+        # Apply thresholding to the grayscale ROI
+        thresh_roi = cv2.threshold(gray_roi, 0, 255, cv2.THRESH_BINARY_INV | cv2.THRESH_OTSU)[1]
+
+        # Calculate the percentage of white pixels in the ROI
+        white_pixels = np.count_nonzero(thresh_roi == 255)
+        total_pixels = thresh_roi.size
+        white_percentage = white_pixels / total_pixels * 100
+
+        # Label the disk as white or black based on the percentage of white pixels
+        if white_percentage > 50:
             color = (0, 0, 255)  # red for white disks
         else:
             color = (0, 255, 0)  # green for black disks
+
+        # Draw a circle around the contour
         cv2.circle(frame, (int(x + w / 2), int(y + h / 2)), int(w / 2), color, 2)
+
+    # Display the frame with the detected disks
+    cv2.imshow('frame', frame)
 
     # Apply Hough transform to the edge map to detect the grid
     edges = cv2.Canny(gray, 50, 150, apertureSize=3)
     lines = cv2.HoughLinesP(edges, 1, np.pi / 180, threshold=100, minLineLength=100, maxLineGap=10)
+
     # Draw the detected lines on the original frame
     if lines is not None:
         for line in lines:
@@ -82,6 +99,7 @@ while True:
     # Check for the 'q' key to quit the program
     if cv2.waitKey(1) & 0xFF == ord('q'):
         break
+
 # Release the camera and close all windows
 cap.release()
 cv2.destroyAllWindows()
