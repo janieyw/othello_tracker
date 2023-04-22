@@ -31,52 +31,57 @@ while True:
     # Convert the segmented image to grayscale
     gray = cv2.cvtColor(segmented, cv2.COLOR_BGR2GRAY)
 
-    # Apply edge detection to the grayscale image
+    # Apply thresholding to the grayscale image
+    thresh = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY_INV | cv2.THRESH_OTSU)[1]
+
+    # Find contours in the thresholded image
+    contours, hierarchy = cv2.findContours(thresh.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+
+    # Iterate through the contours to identify the disks
+    for contour in contours:
+        # Calculate the area of the contour
+        area = cv2.contourArea(contour)
+
+        # Skip contours that are too small to be disks
+        if area < 50:
+            continue
+
+        # Calculate the circularity of the contour
+        perimeter = cv2.arcLength(contour, True)
+        circularity = 4 * np.pi * area / perimeter ** 2
+
+        # Skip contours that are not circular enough to be disks
+        if circularity < 0.5:
+            continue
+
+        # Find the bounding box of the contour
+        x, y, w, h = cv2.boundingRect(contour)
+
+        # Draw a circle around the contour and label it as white or black
+        roi = frame[y:y + h, x:x + w]
+        hsv_roi = cv2.cvtColor(roi, cv2.COLOR_BGR2HSV)
+        avg_hue = np.average(hsv_roi[:, :, 0])
+        if avg_hue > 80:
+            color = (0, 0, 255)  # red for white disks
+        else:
+            color = (0, 255, 0)  # green for black disks
+        cv2.circle(frame, (int(x + w / 2), int(y + h / 2)), int(w / 2), color, 2)
+
+    # Apply Hough transform to the edge map to detect the grid
     edges = cv2.Canny(gray, 50, 150, apertureSize=3)
-
-    # Apply Hough transform to the edge map
     lines = cv2.HoughLinesP(edges, 1, np.pi / 180, threshold=100, minLineLength=100, maxLineGap=10)
-
-    # Filter the lines based on their length, angle, and proximity to each other
-    filtered_lines = []
+    # Draw the detected lines on the original frame
     if lines is not None:
         for line in lines:
             x1, y1, x2, y2 = line[0]
-            length = np.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2)
-            angle = np.arctan2(y2 - y1, x2 - x1) * 180 / np.pi
-            if length > 100 and abs(angle) > 80 and abs(angle) < 100:
-                filtered_lines.append(line)
-            elif length > 100 and abs(angle) < 10:
-                filtered_lines.append(line)
+            cv2.line(frame, (x1, y1), (x2, y2), (0, 0, 255), 2)
 
-    # Find the intersection points of the remaining lines
-    corners = []
-    for i in range(len(filtered_lines)):
-        for j in range(i + 1, len(filtered_lines)):
-            x1, y1, x2, y2 = filtered_lines[i][0]
-            x3, y3, x4, y4 = filtered_lines[j][0]
-            d = (x1 - x2) * (y3 - y4) - (y1 - y2) * (x3 - x4)
-            if d != 0:
-                pt = ((x1 * y2 - y1 * x2) * (x3 - x4) - (x1 - x2) * (x3 * y4 - y3 * x4)) / d, \
-                     ((x1 * y2 - y1 * x2) * (y3 - y4) - (y1 - y2) * (x3 * y4 - y3 * x4)) / d
-                corners.append(pt)
+    # Display the original frame with the detected disks and grid
+    cv2.imshow('frame', frame)
 
-    # Draw the lines and corners on the original image
-    for line in filtered_lines:
-        x1, y1, x2, y2 = line[0]
-        cv2.line(frame, (x1, y1), (x2, y2), (0, 0, 255), 2)
-
-    for pt in corners:
-        x, y = pt
-        cv2.circle(frame, (int(x), int(y)), 5, (0, 255, 0), -1)
-
-    # Display the resulting image
-    cv2.imshow('Game Board', frame)
-
-    # Exit the program if the user presses the 'q' key
+    # Check for the 'q' key to quit the program
     if cv2.waitKey(1) & 0xFF == ord('q'):
         break
-
 # Release the camera and close all windows
 cap.release()
 cv2.destroyAllWindows()
