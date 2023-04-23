@@ -37,13 +37,20 @@ while True:
     # Find contours in the thresholded image
     contours, hierarchy = cv2.findContours(thresh.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
+    # Calculate the maximum area of the contours
+    max_area = 0
+    for contour in contours:
+        area = cv2.contourArea(contour)
+        if area > max_area:
+            max_area = area
+
     # Iterate through the contours to identify the disks
     for contour in contours:
         # Calculate the area of the contour
         area = cv2.contourArea(contour)
 
-        # Skip contours that are too small to be disks
-        if area < 50:
+        # Skip contours that are too small to be disks or too large to be the board
+        if area < 50 or area == max_area:
             continue
 
         # Calculate the circularity of the contour
@@ -71,35 +78,27 @@ while True:
         total_pixels = thresh_roi.size
         white_percentage = white_pixels / total_pixels * 100
 
-        # Label the disk as white or black based on the percentage of white pixels
-        if white_percentage > 50:
-            color = (0, 0, 255)  # red for white disks
+        # Label the disks based on the percentage of white pixels
+        if white_percentage > 60:
+            label = "O"
         else:
-            color = (0, 255, 0)  # green for black disks
+            label = "X"
 
-        # Draw a circle around the contour
-        cv2.circle(frame, (int(x + w / 2), int(y + h / 2)), int(w / 2), color, 2)
+        # Draw the label on the original frame
+        font = cv2.FONT_HERSHEY_SIMPLEX
+        font_scale = 1
+        color = (0, 255, 0)
+        thickness = 2
+        cv2.putText(frame, label, (x, y), font, font_scale, color, thickness)
 
-    # Display the frame with the detected disks
-    cv2.imshow('frame', frame)
+    # Display the original frame with the labeled disks
+    cv2.imshow("Tic Tac Toe Game", frame)
 
-    # Apply Hough transform to the edge map to detect the grid
-    edges = cv2.Canny(gray, 50, 150, apertureSize=3)
-    lines = cv2.HoughLinesP(edges, 1, np.pi / 180, threshold=100, minLineLength=100, maxLineGap=10)
-
-    # Draw the detected lines on the original frame
-    if lines is not None:
-        for line in lines:
-            x1, y1, x2, y2 = line[0]
-            cv2.line(frame, (x1, y1), (x2, y2), (0, 0, 255), 2)
-
-    # Display the original frame with the detected disks and grid
-    cv2.imshow('frame', frame)
-
-    # Check for the 'q' key to quit the program
+    # Exit the loop if the 'q' key is pressed
     if cv2.waitKey(1) & 0xFF == ord('q'):
         break
 
-# Release the camera and close all windows
+# Release the resources and close the window
 cap.release()
 cv2.destroyAllWindows()
+
