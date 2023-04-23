@@ -1,146 +1,105 @@
 import cv2
 import numpy as np
 
+# Initialize the camera and set the resolution
+cap = cv2.VideoCapture(0)
+cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
+cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
 
-class GridDetector:
+while True:
+    # Capture a frame from the camera
+    ret, frame = cap.read()
 
-    def __init__(self):
-        self.img = None
+    # Convert the color frame to HSV color space
+    hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
 
-    def set_image(self, img_path):
-        self.img = cv2.imread(img_path)
+    # Define the lower and upper bounds of the green color in HSV color space
+    lower_green = np.array([40, 50, 50])
+    upper_green = np.array([80, 255, 255])
 
-    def detect_lines(self):
-        # convert to grayscale and blur the image
-        gray = cv2.cvtColor(self.img, cv2.COLOR_BGR2GRAY)
-        blur = cv2.GaussianBlur(gray, (5, 5), 0)
+    # Threshold the HSV image to get a binary mask of the green area
+    mask = cv2.inRange(hsv, lower_green, upper_green)
 
-        # detect edges using Canny
-        edges = cv2.Canny(blur, 50, 150, apertureSize=3)
+    # Apply morphology operations to remove noise and fill gaps in the mask
+    kernel = np.ones((5, 5), np.uint8)
+    mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, kernel)
+    mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, kernel)
 
-        # detect lines using HoughLinesP
-        lines = cv2.HoughLinesP(edges, 1, np.pi / 180, 100, minLineLength=100, maxLineGap=10)
+    # Apply the mask to the original frame to get the segmented image
+    segmented = cv2.bitwise_and(frame, frame, mask=mask)
 
-        return lines
+    # Convert the segmented image to grayscale
+    gray = cv2.cvtColor(segmented, cv2.COLOR_BGR2GRAY)
 
-    # Referenced https://stackoverflow.com/questions/45531074/how-to-merge-lines-after-houghlinesp
-    def merge_lines_pipeline_2(self, lines, img_shape):
-        'Connects detected lines of a grid'
+    # Apply thresholding to the grayscale image
+    thresh = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY_INV | cv2.THRESH_OTSU)[1]
 
-        # Define the size of the image for distance calculation
-        height, width = img_shape[:2]
-        size = height * width
+    # Find contours in the thresholded image
+    contours, hierarchy = cv2.findContours(thresh.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
-        # Define a threshold based on image size to merge the lines
-        threshold = size * 0.01
+    # Iterate through the contours to identify the disks
+    for contour in contours:
+        # Calculate the area of the contour
+        area = cv2.contourArea(contour)
 
-        # Parameters to play with
-        min_distance_to_merge = 30
-        min_angle_to_merge = 30
+        # Skip contours that are too small to be disks
+        if area < 50:
+            continue
 
-        # Clusterize (group) lines
-        groups = []  # all lines groups are here
+        # Calculate the circularity of the contour
+        perimeter = cv2.arcLength(contour, True)
+        circularity = 4 * np.pi * area / perimeter ** 2
 
-        # first line will create new group every time
-        groups.append([lines[0]])
+        # Skip contours that are not circular enough to be disks
+        if circularity < 0.5:
+            continue
 
-        # if line is different from existing groups, create a new group
-        for line_new in lines[1:]:
-            if self.checker(line_new, groups, min_distance_to_merge, min_angle_to_merge):
-                groups.append([line_new])
+        # Find the bounding box of the contour
+        x, y, w, h = cv2.boundingRect(contour)
 
-        # Merge lines within the same group
-        for group in groups:
-            merged_line = self.merge_lines_segments1(group)
-            group.clear()
-            group.append(merged_line)
+        # Extract the ROI corresponding to the contour
+        roi = frame[y:y + h, x:x + w]
 
-        # Merge lines between different groups
-        final_groups = []
-        for i, group in enumerate(groups):
-            if i == 0:
-                final_groups.append(group)
-                continue
-            group_i_first = group[0][:2]
-            group_i_last = group[0][2:]
-            added_to_existing_group = False
-            for final_group in final_groups:
-                final_group_first = final_group[0][:2]
-                final_group_last = final_group[0][2:]
-                dist_first_to_last = np.linalg.norm(np.array(group_i_first) - np.array(final_group_last))
-                dist_last_to_first = np.linalg.norm(np.array(group_i_last) - np.array(final_group_first))
-                if dist_first_to_last < threshold:
-                    final_group.append(group[0])
-                    added_to_existing_group = True
-                    break
-                elif dist_last_to_first < threshold:
-                    final_group.insert(0, group[0])
-                    added_to_existing_group = True
-                    break
-            if not added_to_existing_group:
-                final_groups.append(group)
+        # Convert the ROI to grayscale
+        gray_roi = cv2.cvtColor(roi, cv2.COLOR_BGR2GRAY)
 
-        # Draw final groups
-        for group in final_groups:
-            color = np.random.randint(0, 255, size=3).tolist()
-            for line in group:
-                x1, y1, x2, y2 = line
-                cv2.line(self.img, (x1, y1), (x2, y2), color, 2)
+        # Apply thresholding to the grayscale ROI
+        thresh_roi = cv2.threshold(gray_roi, 0, 255, cv2.THRESH_BINARY_INV | cv2.THRESH_OTSU)[1]
 
-        return self.img
+        # Calculate the percentage of white pixels in the ROI
+        white_pixels = np.count_nonzero(thresh_roi == 255)
+        total_pixels = thresh_roi.size
+        white_percentage = white_pixels / total_pixels * 100
 
-    # Referenced https://stackoverflow.com/questions/45531074/how-to-merge-lines-after-houghlinesp
-    def merge_lines_segments1(self, lines):
-        """Sort lines cluster and return first and
-        return first and last coordinates of the sorted group of line segments"""
-        # last coordinates
-        orientation = self.get_orientation(lines[0])
-
-        # special case
-        if (len(lines) == 1):
-            return [lines[0][:2], lines[0][2:]]
-
-        # [[1,2,3,4],[]] to [[1,2],[3,4],[],[]]
-        points = []
-        for line in lines:
-            points.append(line[:2])
-            points.append(line[2:])
-
-        # if vertical
-        if 45 < orientation < 135:
-            # sort by y
-            points = sorted(points, key=lambda point: point[1])
+        # Label the disk as white or black based on the percentage of white pixels
+        if white_percentage > 50:
+            color = (0, 0, 255)  # red for white disks
         else:
-            # sort by x
-            points = sorted(points, key=lambda point: point[0])
+            color = (0, 255, 0)  # green for black disks
 
-        # return first and last point in sorted group
-        # [[x,y],[x,y]]
-        return [points[0], points[-1]]
+        # Draw a circle around the contour
+        cv2.circle(frame, (int(x + w / 2), int(y + h / 2)), int(w / 2), color, 2)
 
-    def get_orientation(self, line):
-        """Calculate orientation of a line"""
-        x1, y1, x2, y2 = line
-        dx = x2 - x1
-        dy = y2 - y1
-        return np.degrees(np.arctan2(dy, dx))
+    # Display the frame with the detected disks
+    cv2.imshow('frame', frame)
 
-    def checker(self, line_new, groups, min_distance_to_merge, min_angle_to_merge):
-        """Check if line is different from existing groups"""
-        for group in groups:
-            line_existing = group[-1]
-            # Distance between the endpoints of two lines
-            dist1 = np.linalg.norm(np.array(line_new[:2]) - np.array(line_existing[:2]))
-            dist2 = np.linalg.norm(np.array(line_new[2:]) - np.array(line_existing[2:]))
-            # Distance between the first endpoint of line1 and the last endpoint of line2
-            dist3 = np.linalg.norm(np.array(line_new[:2]) - np.array(line_existing[2:]))
-            # Distance between the last endpoint of line1 and the first endpoint of line2
-            dist4 = np.linalg.norm(np.array(line_new[2:]) - np.array(line_existing[:2]))
-            angle1 = abs(self.get_orientation(line_new) - self.get_orientation(line_existing))
-            angle2 = abs(self.get_orientation(line_new) - self.get_orientation(
-                [line_existing[2], line_existing[3], line_existing[0], line_existing[1]]))
-            if min(dist1, dist2, dist3, dist4) < min_distance_to_merge and min(angle1, angle2) < min_angle_to_merge:
-                group.append(line_new)
-                return False
-        return True
+    # Apply Hough transform to the edge map to detect the grid
+    edges = cv2.Canny(gray, 50, 150, apertureSize=3)
+    lines = cv2.HoughLinesP(edges, 1, np.pi / 180, threshold=100, minLineLength=100, maxLineGap=10)
 
+    # Draw the detected lines on the original frame
+    if lines is not None:
+        for line in lines:
+            x1, y1, x2, y2 = line[0]
+            cv2.line(frame, (x1, y1), (x2, y2), (0, 0, 255), 2)
+
+    # Display the original frame with the detected disks and grid
+    cv2.imshow('frame', frame)
+
+    # Check for the 'q' key to quit the program
+    if cv2.waitKey(1) & 0xFF == ord('q'):
+        break
+
+# Release the camera and close all windows
+cap.release()
+cv2.destroyAllWindows()
