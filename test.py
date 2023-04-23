@@ -5,23 +5,23 @@ import numpy as np
 class GridDetector:
 
     def __init__(self):
-        self.img = None
-
-    def set_image(self, img_path):
-        self.img = cv2.imread(img_path)
+        self.cap = cv2.VideoCapture(0)
 
     def detect_lines(self):
-        # convert to grayscale and blur the image
-        gray = cv2.cvtColor(self.img, cv2.COLOR_BGR2GRAY)
-        blur = cv2.GaussianBlur(gray, (5, 5), 0)
+        while True:
+            ret, self.img = self.cap.read()
 
-        # detect edges using Canny
-        edges = cv2.Canny(blur, 50, 150, apertureSize=3)
+            # convert to grayscale and blur the image
+            gray = cv2.cvtColor(self.img, cv2.COLOR_BGR2GRAY)
+            blur = cv2.GaussianBlur(gray, (5, 5), 0)
 
-        # detect lines using HoughLinesP
-        lines = cv2.HoughLinesP(edges, 1, np.pi / 180, 100, minLineLength=100, maxLineGap=10)
+            # detect edges using Canny
+            edges = cv2.Canny(blur, 50, 150, apertureSize=3)
 
-        return lines
+            # detect lines using HoughLinesP
+            lines = cv2.HoughLinesP(edges, 1, np.pi / 180, 100, minLineLength=100, maxLineGap=10)
+
+            return lines
 
     # Referenced https://stackoverflow.com/questions/45531074/how-to-merge-lines-after-houghlinesp
     def merge_lines_pipeline_2(self, lines, img_shape):

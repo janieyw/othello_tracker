@@ -1,4 +1,4 @@
-# OX tracker
+# disk tracker
 import cv2
 import numpy as np
 
@@ -38,20 +38,13 @@ while True:
     # Find contours in the thresholded image
     contours, hierarchy = cv2.findContours(thresh.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
-    # Calculate the maximum area of the contours
-    max_area = 0
-    for contour in contours:
-        area = cv2.contourArea(contour)
-        if area > max_area:
-            max_area = area
-
     # Iterate through the contours to identify the disks
     for contour in contours:
         # Calculate the area of the contour
         area = cv2.contourArea(contour)
 
-        # Skip contours that are too small to be disks or too large to be the board
-        if area < 50 or area == max_area:
+        # Skip contours that are too small to be disks
+        if area < 50:
             continue
 
         # Calculate the circularity of the contour
@@ -79,26 +72,39 @@ while True:
         total_pixels = thresh_roi.size
         white_percentage = white_pixels / total_pixels * 100
 
-        # Label the disks based on the percentage of white pixels
-        if white_percentage > 60:
-            label = "O"
+        # Label the disk as white or black based on the percentage of white pixels
+        if white_percentage > 50:
+            color = (0, 0, 255)  # red for white disks
         else:
-            label = "X"
+            color = (0, 255, 0)  # green for black disks
 
-        # Draw the label on the original frame
-        font = cv2.FONT_HERSHEY_SIMPLEX
-        font_scale = 1
-        color = (0, 255, 0)
-        thickness = 2
-        cv2.putText(frame, label, (x, y), font, font_scale, color, thickness)
+        # Calculate the area and circularity of the contour
+        area = cv2.contourArea(contour)
+        perimeter = cv2.arcLength(contour, True)
+        circularity = 4 * np.pi * area / perimeter ** 2
 
-    # Display the original frame with the labeled disks
-    cv2.imshow("Tic Tac Toe Game", frame)
+        # Only display contours that are large and circular enough to be disks
+        if area >= 50 and circularity >= 0.5:
+            # Draw a bounding box around the contour
+            x, y, w, h = cv2.boundingRect(contour)
+            cv2.rectangle(frame, (x, y), (x + w, y + h), color, 2)
 
-    # Exit the loop if the 'q' key is pressed
+            # Label the disk as white or black based on the percentage of white pixels
+            if white_percentage > 50:
+                label = "White disk"
+            else:
+                label = "Black disk"
+
+            # Draw the label above the bounding box
+            cv2.putText(frame, label, (x, y - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 2)
+
+        # Display the frame
+    cv2.imshow('Frame', frame)
+
+    # Exit if the user presses the 'q' key
     if cv2.waitKey(1) & 0xFF == ord('q'):
         break
 
-# Release the resources and close the window
+# Release the camera and close all windows
 cap.release()
 cv2.destroyAllWindows()
