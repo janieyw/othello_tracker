@@ -1,105 +1,92 @@
 import cv2
 import numpy as np
 
-# Initialize the camera and set the resolution
+# Set up the video capture device (usually 0 for built-in webcam)
 cap = cv2.VideoCapture(0)
-cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
-cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
 
 while True:
-    # Capture a frame from the camera
+    # Read a frame from the video capture device
     ret, frame = cap.read()
 
-    # Convert the color frame to HSV color space
+    # Convert the frame to the HSV color space
     hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
 
-    # Define the lower and upper bounds of the green color in HSV color space
+    # Define the green color range to detect
     lower_green = np.array([40, 50, 50])
     upper_green = np.array([80, 255, 255])
 
-    # Threshold the HSV image to get a binary mask of the green area
+    # Create a mask based on the green color range
     mask = cv2.inRange(hsv, lower_green, upper_green)
 
-    # Apply morphology operations to remove noise and fill gaps in the mask
+    # Apply a morphological operation to fill any gaps in the mask
     kernel = np.ones((5, 5), np.uint8)
-    mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, kernel)
     mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, kernel)
 
-    # Apply the mask to the original frame to get the segmented image
-    segmented = cv2.bitwise_and(frame, frame, mask=mask)
+    # Find contours in the mask
+    contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
-    # Convert the segmented image to grayscale
-    gray = cv2.cvtColor(segmented, cv2.COLOR_BGR2GRAY)
-
-    # Apply thresholding to the grayscale image
-    thresh = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY_INV | cv2.THRESH_OTSU)[1]
-
-    # Find contours in the thresholded image
-    contours, hierarchy = cv2.findContours(thresh.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-
-    # Iterate through the contours to identify the disks
+    # Iterate over the contours and filter for ones that are roughly rectangular and have a large area
+    board_contour = None
+    max_area = 0
     for contour in contours:
-        # Calculate the area of the contour
         area = cv2.contourArea(contour)
-
-        # Skip contours that are too small to be disks
-        if area < 50:
-            continue
-
-        # Calculate the circularity of the contour
         perimeter = cv2.arcLength(contour, True)
-        circularity = 4 * np.pi * area / perimeter ** 2
+        approx = cv2.approxPolyDP(contour, 0.02 * perimeter, True)
+        if len(approx) == 4 and area > max_area:
+            board_contour = approx
+            max_area = area
 
-        # Skip contours that are not circular enough to be disks
-        if circularity < 0.5:
-            continue
+    # Draw a green outline around the detected board
+    if board_contour is not None:
+        cv2.drawContours(frame, [board_contour], 0, (0, 255, 0), 2)
 
-        # Find the bounding box of the contour
-        x, y, w, h = cv2.boundingRect(contour)
+        # Compute the average x coordinate of each vertical line
+        x_coords = [point[0][0] for point in board_contour]
+        x_coords = sorted(x_coords)
+        x_coords_avg = [sum(x_coords[i:i + 8]) / 8 for i in range(0, len(x_coords), 8)]
 
-        # Extract the ROI corresponding to the contour
-        roi = frame[y:y + h, x:x + w]
+        # Compute the average y coordinate of each horizontal line
+        y_coords = [point[0][1] for point in board_contour]
+        y_coords = sorted(y_coords)
+        y_coords_avg = [sum(y_coords[i:i + 8]) / 8 for i in range(0, len(y_coords), 8)]
 
-        # Convert the ROI to grayscale
-        gray_roi = cv2.cvtColor(roi, cv2.COLOR_BGR2GRAY)
+        # Compute the distance between the two farthest vertical lines
+        vert_dist = max(x_coords) - min(x_coords)
 
-        # Apply thresholding to the grayscale ROI
-        thresh_roi = cv2.threshold(gray_roi, 0, 255, cv2.THRESH_BINARY_INV | cv2.THRESH_OTSU)[1]
+        # Compute the distance between the two farthest horizontal lines
+        horiz_dist = max(y_coords) - min(y_coords)
 
-        # Calculate the percentage of white pixels in the ROI
-        white_pixels = np.count_nonzero(thresh_roi == 255)
-        total_pixels = thresh_roi.size
-        white_percentage = white_pixels / total_pixels * 100
+        # Compute the horizontal and vertical spacing between the cells
+        cell_width = vert_dist / 8
+        cell_height = horiz_dist / 8
 
-        # Label the disk as white or black based on the percentage of white pixels
-        if white_percentage > 50:
-            color = (0, 0, 255)  # red for white disks
-        else:
-            color = (0, 255, 0)  # green for black disks
+        # Create an approximate map of the cell centers' (x, y) values
+        cell_centers = []
+        for i in range(8):
+            if i < len(y_coords_avg):  # check if index is valid
+                for j in range(8):
+                    if j < len(x_coords_avg):
+                        x = int(x_coords_avg[j] + (i + 0.5) * cell_width)
+                        y = int(y_coords_avg[i] + (j + 0.5) * cell_height)
+                        cell_centers.append((x, y))
 
-        # Draw a circle around the contour
-        cv2.circle(frame, (int(x + w / 2), int(y + h / 2)), int(w / 2), color, 2)
+        # Draw vertical grid lines
+        for i in range(9):
+            x = int(min(x_coords) + i * cell_width)
+            cv2.line(frame, (x, min(y_coords)), (x, max(y_coords)), (0, 0, 255), 1)
 
-    # Display the frame with the detected disks
-    cv2.imshow('frame', frame)
+        # Draw horizontal grid lines
+        for i in range(9):
+            y = int(min(y_coords) + i * cell_height)
+            cv2.line(frame, (min(x_coords), y), (max(x_coords), y), (0, 0, 255), 1)
 
-    # Apply Hough transform to the edge map to detect the grid
-    edges = cv2.Canny(gray, 50, 150, apertureSize=3)
-    lines = cv2.HoughLinesP(edges, 1, np.pi / 180, threshold=100, minLineLength=100, maxLineGap=10)
+    # Display the original frame with the rectangle and dots drawn
+    cv2.imshow('Frame', frame)
 
-    # Draw the detected lines on the original frame
-    if lines is not None:
-        for line in lines:
-            x1, y1, x2, y2 = line[0]
-            cv2.line(frame, (x1, y1), (x2, y2), (0, 0, 255), 2)
-
-    # Display the original frame with the detected disks and grid
-    cv2.imshow('frame', frame)
-
-    # Check for the 'q' key to quit the program
+    # Exit the loop if the 'q' key is pressed
     if cv2.waitKey(1) & 0xFF == ord('q'):
         break
 
-# Release the camera and close all windows
+# Release the video capture device and close all windows
 cap.release()
 cv2.destroyAllWindows()
