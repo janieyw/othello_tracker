@@ -1,71 +1,71 @@
 import cv2
 import numpy as np
 
-# Define green color range
-lower_green = np.array([0, 50, 0])
-upper_green = np.array([100, 255, 100])
-
-# Capture video from default camera
+# Set up the video capture device (usually 0 for built-in webcam)
 cap = cv2.VideoCapture(0)
 
-# Loop until user quits
 while True:
-    # Read a frame from the video
+    # Read a frame from the video capture device
     ret, frame = cap.read()
-    if not ret:
-        break
 
-    # Apply color thresholding to extract green pixels
-    green_mask = cv2.inRange(frame, lower_green, upper_green)
-    # Clean up noise with morphological operations
-    kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (5, 5))
-    green_mask = cv2.morphologyEx(green_mask, cv2.MORPH_CLOSE, kernel)
+    # Convert the frame to the HSV color space
+    hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
 
-    # Find contours in the binary image
-    contours, hierarchy = cv2.findContours(green_mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+    # Define the green color range to detect
+    lower_green = np.array([40, 50, 50])
+    upper_green = np.array([80, 255, 255])
 
-    # Find the outer rectangle that contains all the contours
-    board_rect = cv2.boundingRect(np.concatenate(contours))
-    x, y, w, h = board_rect
+    # Create a mask based on the green color range
+    mask = cv2.inRange(hsv, lower_green, upper_green)
 
-    # Compute the size of a cell based on the distance between the vertical lines
-    num_cols = 9
-    col_centers = np.zeros(num_cols, dtype=np.float32)
-    col_centers[0] = x + w // num_cols // 2
-    for i in range(1, num_cols):
-        col_centers[i] = col_centers[i - 1] + w / (num_cols - 1)
-    cell_size = int((col_centers[-1] - col_centers[0]) / (num_cols - 1))
+    # Apply a morphological operation to fill any gaps in the mask
+    kernel = np.ones((5, 5), np.uint8)
+    mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, kernel)
 
-    # Compute the size of a cell based on the distance between the horizontal lines
-    num_rows = 9
-    row_centers = np.zeros(num_rows, dtype=np.float32)
-    row_centers[0] = y + h // num_rows // 2
-    for i in range(1, num_rows):
-        row_centers[i] = row_centers[i - 1] + h / (num_rows - 1)
-    cell_size = int((row_centers[-1] - row_centers[0]) / (num_rows - 1))
+    # Find contours in the mask
+    contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
-    # Create a grid of cell centers
-    centers_x = np.zeros((num_rows, num_cols), dtype=np.float32)
-    centers_y = np.zeros((num_rows, num_cols), dtype=np.float32)
-    for i in range(num_rows):
-        for j in range(num_cols):
-            centers_x[i, j] = col_centers[j]
-            centers_y[i, j] = row_centers[i]
+    # Sort contours by area in descending order
+    contours = sorted(contours, key=lambda x: cv2.contourArea(x), reverse=True)
 
-    # Apply affine transformation to warp the image into a bird's-eye view
-    src_points = np.float32([[x, y], [x + w, y], [x, y + h], [x + w, y + h]])
-    dst_points = np.float32([[0, 0], [cell_size * (num_cols - 1), 0], [0, cell_size * (num_rows - 1)],
-                             [cell_size * (num_cols - 1), cell_size * (num_rows - 1)]])
-    M = cv2.getPerspectiveTransform(src_points, dst_points)
-    warped = cv2.warpPerspective(frame, M, (cell_size * (num_cols - 1), cell_size * (num_rows - 1)))
+    # Find the largest contour
+    largest_contour = None
+    for contour in contours:
+        approx = cv2.approxPolyDP(contour, 0.02 * cv2.arcLength(contour, True), True)
+        if len(approx) == 4:
+            largest_contour = approx
+            break
 
-    # Display the output
+    # Draw a green outline around the largest contour
+    if largest_contour is not None:
+        cv2.drawContours(frame, [largest_contour], 0, (0, 255, 0), 2)
+
+        top_left, top_right, bottom_right, bottom_left = largest_contour.reshape(4, 2)
+
+        # Divide each side of the board contour into 9 sections
+        top_divisions = np.linspace(top_left, top_right, num=9, endpoint=True)
+        right_divisions = np.linspace(top_right, bottom_right, num=9, endpoint=True)
+        bottom_divisions = np.linspace(bottom_right, bottom_left, num=9, endpoint=True)
+        left_divisions = np.linspace(top_left, bottom_left, num=9, endpoint=True)
+
+        # Connect the dividing points of each side to those of the facing side in the desired order
+        left_divisions_flipped = np.flip(left_divisions, axis=0)
+        top_divisions_flipped = np.flip(top_divisions, axis=0)
+        right_divisions_flipped = np.flip(right_divisions, axis=0)
+        bottom_divisions_flipped = np.flip(bottom_divisions, axis=0)
+
+        # Draw the horizontal and vertical lines
+        for i in range(len(top_divisions)):
+            cv2.line(frame, tuple(map(int, top_divisions_flipped[i])), tuple(map(int, bottom_divisions[i])), (0, 255, 0), 1)
+            cv2.line(frame, tuple(map(int, left_divisions[i])), tuple(map(int, right_divisions[i])), (0, 255, 0), 1)
+
+    # Display the resulting frame
     cv2.imshow('frame', frame)
 
-    # Exit the loop if the 'q' key is pressed
+    # Wait for a key press and check if it is the 'q' key to quit
     if cv2.waitKey(1) & 0xFF == ord('q'):
         break
 
-# Release the video capture device and close all windows
-cap.release()
+# Release the capture device and close all windows
+cap.release
 cv2.destroyAllWindows()
