@@ -25,24 +25,24 @@ while True:
     # Find contours in the mask
     contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
-    # Iterate over the contours and filter for ones that are roughly rectangular and have a large area
-    board_contour = None
-    max_area = 0
+    # Sort contours by area in descending order
+    contours = sorted(contours, key=lambda x: cv2.contourArea(x), reverse=True)
+
+    # Find the largest contour
+    largest_contour = None
     for contour in contours:
-        area = cv2.contourArea(contour)
-        perimeter = cv2.arcLength(contour, True)
-        approx = cv2.approxPolyDP(contour, 0.02 * perimeter, True)
-        if len(approx) == 4 and area > max_area:
-            board_contour = approx
-            max_area = area
+        approx = cv2.approxPolyDP(contour, 0.02 * cv2.arcLength(contour, True), True)
+        if len(approx) == 4:
+            largest_contour = approx
+            break
 
-    # Draw a green outline around the detected board
-    if board_contour is not None:
-        cv2.drawContours(frame, [board_contour], 0, (0, 255, 0), 2)
+    # Draw a green outline around the largest contour
+    if largest_contour is not None:
+        cv2.drawContours(frame, [largest_contour], 0, (0, 255, 0), 2)
 
-        top_left, top_right, bottom_right, bottom_left = board_contour.reshape(4, 2)
+        top_left, top_right, bottom_right, bottom_left = largest_contour.reshape(4, 2)
 
-        # Divide each side of the board contour into 9 sections
+        # Divide each side of the board contour into 8 sections
         top_divisions = np.linspace(top_left, top_right, num=9, endpoint=True)
         right_divisions = np.linspace(top_right, bottom_right, num=9, endpoint=True)
         bottom_divisions = np.linspace(bottom_right, bottom_left, num=9, endpoint=True)
@@ -56,16 +56,17 @@ while True:
 
         # Draw the horizontal and vertical lines
         for i in range(len(top_divisions)):
-            cv2.line(frame, tuple(map(int, top_divisions_flipped[i])), tuple(map(int, bottom_divisions[i])), (0, 255, 0), 1)
-            cv2.line(frame, tuple(map(int, left_divisions[i])), tuple(map(int, right_divisions[i])), (0, 255, 0), 1)
+            cv2.line(frame, tuple(map(int, top_divisions_flipped[i])), tuple(map(int, bottom_divisions[i])),
+                     (0, 255, 0), 5)
+            cv2.line(frame, tuple(map(int, left_divisions[i])), tuple(map(int, right_divisions[i])), (0, 255, 0), 5)
 
-        # Display the resulting frame
-        cv2.imshow('frame', frame)
+    # Display the resulting frame
+    cv2.imshow('frame', frame)
 
     # Wait for a key press and check if it is the 'q' key to quit
     if cv2.waitKey(1) & 0xFF == ord('q'):
         break
 
 # Release the capture device and close all windows
-cap.release()
+cap.release
 cv2.destroyAllWindows()
