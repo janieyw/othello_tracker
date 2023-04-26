@@ -79,19 +79,33 @@ while True:
                      (0, 255, 0), 5)
             cv2.line(frame, tuple(map(int, left_divisions[i])), tuple(map(int, right_divisions[i])), (0, 255, 0), 5)
             for j in range(len(top_divisions) - 1):
-                # x = int(left_divisions[i][0] + (right_divisions[i][0] - left_divisions[i][0]) / 2)
-                # y = int(top_divisions[j][1] + (bottom_divisions[j][1] - top_divisions[j][1]) / 2)
-                x = int((j + 0.5) * frame.shape[1] / 8)
-                y = int((i + 0.5) * frame.shape[0] / 8)
+                x1, y1 = int(j * frame.shape[1] / 8), int(i * frame.shape[0] / 8)
+                x2, y2 = int((j + 1) * frame.shape[1] / 8), int((i + 1) * frame.shape[0] / 8)
 
-                # Check if the center pixel is white
-                if white_mask[y, x] == 255:
-                    grid_colors[i][j] = 'W'
-                # Check if the center pixel is black
-                elif black_mask[y, x] == 255:
+                # Apply the color masks to the original image
+                green_pixels = cv2.bitwise_and(frame[y1:y2, x1:x2], frame[y1:y2, x1:x2], mask=green_mask[y1:y2, x1:x2])
+                black_pixels = cv2.bitwise_and(frame[y1:y2, x1:x2], frame[y1:y2, x1:x2], mask=black_mask[y1:y2, x1:x2])
+                white_pixels = cv2.bitwise_and(frame[y1:y2, x1:x2], frame[y1:y2, x1:x2], mask=white_mask[y1:y2, x1:x2])
+
+                # Calculate the percentage of each color in the cell
+                green_percentage = np.count_nonzero(green_pixels) / ((x2 - x1) * (y2 - y1))
+                black_percentage = np.count_nonzero(black_pixels) / ((x2 - x1) * (y2 - y1))
+                white_percentage = np.count_nonzero(white_pixels) / ((x2 - x1) * (y2 - y1))
+
+                # Find the color with the highest percentage
+                max_percentage = max(green_percentage, white_percentage, black_percentage)
+                if green_percentage == max_percentage:
+                    grid_colors[i][j] = 'G'
+                elif black_percentage == max_percentage:
                     grid_colors[i][j] = 'B'
                 else:
-                    grid_colors[i][j] = 'G'
+                    grid_colors[i][j] = 'W'
+
+                color_label = grid_colors[i][j]
+                cv2.rectangle(frame, (int(left_divisions[i][0]), int(top_divisions[j][1])),
+                              (int(right_divisions[i][0]), int(bottom_divisions[j][1])), -1)
+                cv2.putText(frame, color_label, (x1 - 20, y1 + 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 0), 2)
+
 
     if cv2.waitKey(1) & 0xFF == ord(' '):
         for row in grid_colors:
