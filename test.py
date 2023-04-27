@@ -62,18 +62,6 @@ while True:
 
         top_left, top_right, bottom_right, bottom_left = largest_contour.reshape(4, 2)
 
-        # # Divide each side of the board contour into 8 sections
-        # top_divisions = np.linspace(top_left, top_right, num=9, endpoint=True)
-        # right_divisions = np.linspace(top_right, bottom_right, num=9, endpoint=True)
-        # bottom_divisions = np.linspace(bottom_right, bottom_left, num=9, endpoint=True)
-        # left_divisions = np.linspace(top_left, bottom_left, num=9, endpoint=True)
-        #
-        # # Connect the dividing points of each side to those of the facing side in the desired order
-        # left_divisions_flipped = np.flip(left_divisions, axis=0)
-        # top_divisions_flipped = np.flip(top_divisions, axis=0)
-        # right_divisions_flipped = np.flip(right_divisions, axis=0)
-        # bottom_divisions_flipped = np.flip(bottom_divisions, axis=0)
-
         cv2.circle(frame, (top_left[0], top_left[1]), 10, (255, 0, 0), -1)
         # cv2.circle(frame, (top_right[0], top_right[1]), 10, (255, 0, 0), -1)
         # cv2.circle(frame, (bottom_right[0], bottom_right[1]), 10, (255, 0, 0), -1)
@@ -119,38 +107,33 @@ while True:
                 cv2.line(frame, (int(top_right[0]), int(top_right[1])), (int(bottom_right[0]), int(bottom_right[1])), color=(0, 255, 0),
                          thickness=2)
 
-        # for i in range(len(left_divisions) - 1):
-        #     cv2.line(frame, tuple(map(int, top_divisions_flipped[i])), tuple(map(int, bottom_divisions[i])),
-        #              (0, 255, 0), 5)
-        #     cv2.line(frame, tuple(map(int, left_divisions[i])), tuple(map(int, right_divisions[i])), (0, 255, 0), 5)
-    #         for j in range(len(top_divisions) - 1):
-    #             # Apply the color masks to the original image
-    #             green_pixels = cv2.bitwise_and(frame[y1:y2, x1:x2], frame[y1:y2, x1:x2], mask=green_mask[y1:y2, x1:x2])
-    #             black_pixels = cv2.bitwise_and(frame[y1:y2, x1:x2], frame[y1:y2, x1:x2], mask=black_mask[y1:y2, x1:x2])
-    #             white_pixels = cv2.bitwise_and(frame[y1:y2, x1:x2], frame[y1:y2, x1:x2], mask=white_mask[y1:y2, x1:x2])
-    #
-    #             # Calculate the percentage of each color in the cell
-    #             green_percentage = np.count_nonzero(green_pixels) / ((x2 - x1) * (y2 - y1))
-    #             black_percentage = np.count_nonzero(black_pixels) / ((x2 - x1) * (y2 - y1))
-    #             white_percentage = np.count_nonzero(white_pixels) / ((x2 - x1) * (y2 - y1))
-    #
-    #             # Find the color with the highest percentage
-    #             max_percentage = max(green_percentage, white_percentage, black_percentage)
-    #             if green_percentage == max_percentage:
-    #                 grid_colors[i][j] = 'G'
-    #             elif black_percentage == max_percentage:
-    #                 grid_colors[i][j] = 'B'
-    #             else:
-    #                 grid_colors[i][j] = 'W'
-    #
-    #             x1, y1 = int(top_divisions_flipped[i][0]), int(left_divisions[j][1])
-    #             x2, y2 = x2 - int(bottom_divisions[i][0]), y2 + int(right_divisions[j][1])
-    #
-    #
-    # if cv2.waitKey(1) & 0xFF == ord(' '):
-    #     for row in grid_colors:
-    #         print(' '.join(row))
-    #     print("---------------")
+        for i in range(num_segments):
+            for j in range(num_segments):
+                # Define the boundaries of the current grid cell
+                x_min, y_min = int(top_divisions[i][0]), int(top_divisions[i][1])
+                x_max, y_max = int(bottom_divisions[i][0]), int(bottom_divisions[i][1])
+
+                # Extract the region of interest from the original frame
+                roi = frame[y_min:y_max, x_min:x_max]
+
+                # Count the number of pixels in each mask
+                num_green_pixels = cv2.countNonZero(green_mask)
+                num_black_pixels = cv2.countNonZero(black_mask)
+                num_white_pixels = cv2.countNonZero(white_mask)
+
+                # Determine the predominant color and store it in the `grid_colors` array
+                if num_green_pixels > num_black_pixels and num_green_pixels > num_white_pixels:
+                    grid_colors[j][i] = 'G'
+                elif num_black_pixels > num_green_pixels and num_black_pixels > num_white_pixels:
+                    grid_colors[j][i] = 'B'
+                else:
+                    grid_colors[j][i] = 'W'
+
+        # Print out the color information for each grid cell
+        if cv2.waitKey(1) & 0xFF == ord(' '):
+            for row in grid_colors:
+                print(' '.join(row))
+            print("---------------")
 
     # Display the resulting frame
     cv2.imshow('frame', frame)
