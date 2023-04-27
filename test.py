@@ -58,59 +58,99 @@ while True:
 
     # Draw a green outline around the largest contour
     if largest_contour is not None:
-        cv2.drawContours(frame, [largest_contour], 0, (0, 255, 0), 2)
+        # cv2.drawContours(frame, [largest_contour], 0, (0, 255, 0), 2)
 
         top_left, top_right, bottom_right, bottom_left = largest_contour.reshape(4, 2)
 
-        # Divide each side of the board contour into 8 sections
-        top_divisions = np.linspace(top_left, top_right, num=9, endpoint=True)
-        right_divisions = np.linspace(top_right, bottom_right, num=9, endpoint=True)
-        bottom_divisions = np.linspace(bottom_right, bottom_left, num=9, endpoint=True)
-        left_divisions = np.linspace(top_left, bottom_left, num=9, endpoint=True)
+        # # Divide each side of the board contour into 8 sections
+        # top_divisions = np.linspace(top_left, top_right, num=9, endpoint=True)
+        # right_divisions = np.linspace(top_right, bottom_right, num=9, endpoint=True)
+        # bottom_divisions = np.linspace(bottom_right, bottom_left, num=9, endpoint=True)
+        # left_divisions = np.linspace(top_left, bottom_left, num=9, endpoint=True)
+        #
+        # # Connect the dividing points of each side to those of the facing side in the desired order
+        # left_divisions_flipped = np.flip(left_divisions, axis=0)
+        # top_divisions_flipped = np.flip(top_divisions, axis=0)
+        # right_divisions_flipped = np.flip(right_divisions, axis=0)
+        # bottom_divisions_flipped = np.flip(bottom_divisions, axis=0)
 
-        # Connect the dividing points of each side to those of the facing side in the desired order
+        cv2.circle(frame, (top_left[0], top_left[1]), 10, (255, 0, 0), -1)
+        # cv2.circle(frame, (top_right[0], top_right[1]), 10, (255, 0, 0), -1)
+        # cv2.circle(frame, (bottom_right[0], bottom_right[1]), 10, (255, 0, 0), -1)
+        # cv2.circle(frame, (bottom_left[0], bottom_left[1]), 10, (255, 0, 0), -1)
+        # cv2.line(frame, (top_left[0], top_left[1]), (top_right[0], top_right[1]), (0, 255, 0), 2)
+        # cv2.line(frame, (top_right[0], top_right[1]), (bottom_right[0], bottom_right[1]), (0, 255, 0), 2)
+        # cv2.line(frame, (bottom_right[0], bottom_right[1]), (bottom_left[0], bottom_left[1]), (0, 255, 0), 2)
+        # cv2.line(frame, (bottom_left[0], bottom_left[1]), (top_left[0], top_left[1]), (0, 255, 0), 2)
+        num_segments = 8
+
+        top_divisions = np.linspace(top_left, top_right, num=num_segments + 1, endpoint=True)
+        right_divisions = np.linspace(top_right, bottom_right, num=num_segments + 1, endpoint=True)
+        bottom_divisions = np.linspace(bottom_right, bottom_left, num=num_segments + 1, endpoint=True)
+        left_divisions = np.linspace(bottom_left, top_left, num=num_segments + 1, endpoint=True)
+
         left_divisions_flipped = np.flip(left_divisions, axis=0)
         top_divisions_flipped = np.flip(top_divisions, axis=0)
         right_divisions_flipped = np.flip(right_divisions, axis=0)
         bottom_divisions_flipped = np.flip(bottom_divisions, axis=0)
 
-        for i in range(len(left_divisions) - 1):
-            cv2.line(frame, tuple(map(int, top_divisions_flipped[i])), tuple(map(int, bottom_divisions[i])),
-                     (0, 255, 0), 5)
-            cv2.line(frame, tuple(map(int, left_divisions[i])), tuple(map(int, right_divisions[i])), (0, 255, 0), 5)
-            for j in range(len(top_divisions) - 1):
-                x1, y1 = int(j * frame.shape[1] / 8), int(i * frame.shape[0] / 8)
-                x2, y2 = int((j + 1) * frame.shape[1] / 8), int((i + 1) * frame.shape[0] / 8)
+        # Draw lines connecting corresponding segments on opposite sides
+        for i in range(num_segments):
+            for j in range(num_segments):
+                top_left = top_divisions_flipped[i, :]
+                top_right = top_divisions_flipped[i + 1, :]
+                bottom_left = bottom_divisions[i, :]
+                bottom_right = bottom_divisions[i + 1, :]
+                left_top = left_divisions_flipped[j, :]
+                left_bottom = left_divisions_flipped[j + 1, :]
+                right_top = right_divisions[j, :]
+                right_bottom = right_divisions[j + 1, :]
 
-                # Apply the color masks to the original image
-                green_pixels = cv2.bitwise_and(frame[y1:y2, x1:x2], frame[y1:y2, x1:x2], mask=green_mask[y1:y2, x1:x2])
-                black_pixels = cv2.bitwise_and(frame[y1:y2, x1:x2], frame[y1:y2, x1:x2], mask=black_mask[y1:y2, x1:x2])
-                white_pixels = cv2.bitwise_and(frame[y1:y2, x1:x2], frame[y1:y2, x1:x2], mask=white_mask[y1:y2, x1:x2])
+                # Draw smaller quadrilateral
+                points = np.array([top_left, top_right, bottom_right, bottom_left])
 
-                # Calculate the percentage of each color in the cell
-                green_percentage = np.count_nonzero(green_pixels) / ((x2 - x1) * (y2 - y1))
-                black_percentage = np.count_nonzero(black_pixels) / ((x2 - x1) * (y2 - y1))
-                white_percentage = np.count_nonzero(white_pixels) / ((x2 - x1) * (y2 - y1))
+                # Draw lines connecting opposite sides
+                cv2.line(frame, (int(left_top[0]), int(left_top[1])), (int(right_top[0]), int(right_top[1])), color=(0, 255, 0),
+                         thickness=2)
+                cv2.line(frame, (int(left_bottom[0]), int(left_bottom[1])), (int(right_bottom[0]), int(right_bottom[1])), color=(0, 255, 0),
+                         thickness=2) # Left side
+                cv2.line(frame, (int(top_left[0]), int(top_left[1])), (int(bottom_left[0]), int(bottom_left[1])), color=(0, 255, 0),
+                         thickness=2)
+                cv2.line(frame, (int(top_right[0]), int(top_right[1])), (int(bottom_right[0]), int(bottom_right[1])), color=(0, 255, 0),
+                         thickness=2)
 
-                # Find the color with the highest percentage
-                max_percentage = max(green_percentage, white_percentage, black_percentage)
-                if green_percentage == max_percentage:
-                    grid_colors[i][j] = 'G'
-                elif black_percentage == max_percentage:
-                    grid_colors[i][j] = 'B'
-                else:
-                    grid_colors[i][j] = 'W'
-
-                color_label = grid_colors[i][j]
-                cv2.rectangle(frame, (int(left_divisions[i][0]), int(top_divisions[j][1])),
-                              (int(right_divisions[i][0]), int(bottom_divisions[j][1])), -1)
-                cv2.putText(frame, color_label, (x1 - 20, y1 + 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 0), 2)
-
-
-    if cv2.waitKey(1) & 0xFF == ord(' '):
-        for row in grid_colors:
-            print(' '.join(row))
-        print("---------------")
+        # for i in range(len(left_divisions) - 1):
+        #     cv2.line(frame, tuple(map(int, top_divisions_flipped[i])), tuple(map(int, bottom_divisions[i])),
+        #              (0, 255, 0), 5)
+        #     cv2.line(frame, tuple(map(int, left_divisions[i])), tuple(map(int, right_divisions[i])), (0, 255, 0), 5)
+    #         for j in range(len(top_divisions) - 1):
+    #             # Apply the color masks to the original image
+    #             green_pixels = cv2.bitwise_and(frame[y1:y2, x1:x2], frame[y1:y2, x1:x2], mask=green_mask[y1:y2, x1:x2])
+    #             black_pixels = cv2.bitwise_and(frame[y1:y2, x1:x2], frame[y1:y2, x1:x2], mask=black_mask[y1:y2, x1:x2])
+    #             white_pixels = cv2.bitwise_and(frame[y1:y2, x1:x2], frame[y1:y2, x1:x2], mask=white_mask[y1:y2, x1:x2])
+    #
+    #             # Calculate the percentage of each color in the cell
+    #             green_percentage = np.count_nonzero(green_pixels) / ((x2 - x1) * (y2 - y1))
+    #             black_percentage = np.count_nonzero(black_pixels) / ((x2 - x1) * (y2 - y1))
+    #             white_percentage = np.count_nonzero(white_pixels) / ((x2 - x1) * (y2 - y1))
+    #
+    #             # Find the color with the highest percentage
+    #             max_percentage = max(green_percentage, white_percentage, black_percentage)
+    #             if green_percentage == max_percentage:
+    #                 grid_colors[i][j] = 'G'
+    #             elif black_percentage == max_percentage:
+    #                 grid_colors[i][j] = 'B'
+    #             else:
+    #                 grid_colors[i][j] = 'W'
+    #
+    #             x1, y1 = int(top_divisions_flipped[i][0]), int(left_divisions[j][1])
+    #             x2, y2 = x2 - int(bottom_divisions[i][0]), y2 + int(right_divisions[j][1])
+    #
+    #
+    # if cv2.waitKey(1) & 0xFF == ord(' '):
+    #     for row in grid_colors:
+    #         print(' '.join(row))
+    #     print("---------------")
 
     # Display the resulting frame
     cv2.imshow('frame', frame)
