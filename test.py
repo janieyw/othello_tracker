@@ -64,19 +64,25 @@ while True:
 
         top_left, top_right, bottom_right, bottom_left = largest_contour.reshape(4, 2)
 
-        cv2.circle(frame, (top_left[0], top_left[1]), 10, (255, 0, 0), -1)  # Top left
+        cv2.circle(frame, (top_left[0], top_left[1]), 10, (0, 0, 255), -1)  # Top left
         cv2.circle(frame, (top_right[0], top_right[1]), 10, (255, 0, 0), -1)  # Top Right
         cv2.circle(frame, (bottom_right[0], bottom_right[1]), 10, (255, 0, 0), -1)  # Bottom Right
         cv2.circle(frame, (bottom_left[0], bottom_left[1]), 10, (255, 0, 0), -1)  # Bottom Left
 
-        top_side = top_right[0] - top_left[0]
-        bottom_side = bottom_right[0] - bottom_left[0]
-        right_side = top_right[1] - bottom_right[1]
-        left_side = top_left[1] - bottom_left[1]
+        top_side = math.sqrt(pow(top_right[0] - top_left[0], 2) + pow(top_right[1] - top_left[1], 2))
+        bottom_side = math.sqrt(pow(bottom_right[0] - bottom_left[0], 2) + pow(bottom_right[1] - bottom_left[1], 2))
+        right_side = math.sqrt(pow(top_right[0] - bottom_right[0], 2) + pow(top_right[1] - bottom_right[1], 2))
+        left_side = math.sqrt(pow(top_left[0] - bottom_left[0], 2) + pow(top_left[1] - bottom_left[1], 2))
+
         top_side_cell_length = top_side / 8
         bottom_side_cell_length = bottom_side / 8
         right_side_cell_length = right_side / 8
         left_side_cell_length = left_side / 8
+
+        print("top", top_side_cell_length)
+        print("bottom", bottom_side_cell_length)
+        print("right", right_side_cell_length)
+        print("left", left_side_cell_length)
 
         # define the grid size
         num_segments = 8
@@ -94,8 +100,8 @@ while True:
         small_quads = []
 
         # Iterate over the rows and columns
-        for row in range(8):
-            for col in range(8):
+        for row in range(1):
+            for col in range(1):
                 # Define the points of the current smaller quadrilateral
                 quad_points = [
                     (
@@ -127,7 +133,19 @@ while True:
                 # Add the points to the list of smaller quadrilaterals
                 small_quads.append(quad_points)
 
-        # cv2.line(frame, (top_left[0], top_left[1]), (top_right[0], top_right[1]), (0, 255, 0), 2)
+        # # Draw a quadrilateral for each smaller quadrilateral
+        # for quad in small_quads:
+        #     pts = np.array(quad, np.int32)
+        #     pts = pts.reshape((-1, 1, 2))
+        #     cv2.polylines(frame, [pts], True, (0, 0, 255), 2)
+
+        # Draw red circles at each point in small_quads
+        for quad in small_quads:
+            for point in quad:
+                x, y = int(point[0]), int(point[1])
+                cv2.circle(frame, (x, y), 8, (0, 0, 255), -1)
+
+        cv2.line(frame, (top_left[0], top_left[1]), (top_right[0], top_right[1]), (0, 255, 0), 2)
         # cv2.line(frame, (top_right[0], top_right[1]), (bottom_right[0], bottom_right[1]), (0, 255, 0), 2)
         # cv2.line(frame, (bottom_right[0], bottom_right[1]), (bottom_left[0], bottom_left[1]), (0, 255, 0), 2)
         # cv2.line(frame, (bottom_left[0], bottom_left[1]), (top_left[0], top_left[1]), (0, 255, 0), 2)
