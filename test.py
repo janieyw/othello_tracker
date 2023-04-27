@@ -1,5 +1,7 @@
 import cv2
 import numpy as np
+import math
+import matplotlib.pyplot as plt
 
 # Set up the video capture device (usually 0 for built-in webcam)
 cap = cv2.VideoCapture(0)
@@ -62,15 +64,73 @@ while True:
 
         top_left, top_right, bottom_right, bottom_left = largest_contour.reshape(4, 2)
 
-        cv2.circle(frame, (top_left[0], top_left[1]), 10, (255, 0, 0), -1)
-        # cv2.circle(frame, (top_right[0], top_right[1]), 10, (255, 0, 0), -1)
-        # cv2.circle(frame, (bottom_right[0], bottom_right[1]), 10, (255, 0, 0), -1)
-        # cv2.circle(frame, (bottom_left[0], bottom_left[1]), 10, (255, 0, 0), -1)
+        cv2.circle(frame, (top_left[0], top_left[1]), 10, (255, 0, 0), -1)  # Top left
+        cv2.circle(frame, (top_right[0], top_right[1]), 10, (255, 0, 0), -1)  # Top Right
+        cv2.circle(frame, (bottom_right[0], bottom_right[1]), 10, (255, 0, 0), -1)  # Bottom Right
+        cv2.circle(frame, (bottom_left[0], bottom_left[1]), 10, (255, 0, 0), -1)  # Bottom Left
+
+        top_side = top_right[0] - top_left[0]
+        bottom_side = bottom_right[0] - bottom_left[0]
+        right_side = top_right[1] - bottom_right[1]
+        left_side = top_left[1] - bottom_left[1]
+        top_side_cell_length = top_side / 8
+        bottom_side_cell_length = bottom_side / 8
+        right_side_cell_length = right_side / 8
+        left_side_cell_length = left_side / 8
+
+        # define the grid size
+        num_segments = 8
+
+        # Define the starting points of the quadrilateral
+        start_points = [top_left, bottom_left, bottom_right, top_right]
+
+        # Calculate the angles of the sides
+        top_angle = math.atan2(top_right[1] - top_left[1], top_right[0] - top_left[0])
+        bottom_angle = math.atan2(bottom_right[1] - bottom_left[1], bottom_right[0] - bottom_left[0])
+        left_angle = math.atan2(top_left[1] - bottom_left[1], top_left[0] - bottom_left[0])
+        right_angle = math.atan2(top_right[1] - bottom_right[1], top_right[0] - bottom_right[0])
+
+        # Create an empty list to store the points of each smaller quadrilateral
+        small_quads = []
+
+        # Iterate over the rows and columns
+        for row in range(8):
+            for col in range(8):
+                # Define the points of the current smaller quadrilateral
+                quad_points = [
+                    (
+                        start_points[0][0] + col * left_side_cell_length * math.cos(
+                            top_angle) + row * top_side_cell_length * math.cos(left_angle),
+                        start_points[0][1] + col * left_side_cell_length * math.sin(
+                            top_angle) + row * top_side_cell_length * math.sin(left_angle)
+                    ),
+                    (
+                        start_points[1][0] + col * left_side_cell_length * math.cos(bottom_angle) + (
+                                    row + 1) * bottom_side_cell_length * math.cos(left_angle),
+                        start_points[1][1] + col * left_side_cell_length * math.sin(bottom_angle) + (
+                                    row + 1) * bottom_side_cell_length * math.sin(left_angle)
+                    ),
+                    (
+                        start_points[1][0] + (col + 1) * right_side_cell_length * math.cos(bottom_angle) + (
+                                    row + 1) * bottom_side_cell_length * math.cos(right_angle),
+                        start_points[1][1] + (col + 1) * right_side_cell_length * math.sin(bottom_angle) + (
+                                    row + 1) * bottom_side_cell_length * math.sin(right_angle)
+                    ),
+                    (
+                        start_points[0][0] + (col + 1) * right_side_cell_length * math.cos(
+                            top_angle) + row * top_side_cell_length * math.cos(right_angle),
+                        start_points[0][1] + (col + 1) * right_side_cell_length * math.sin(
+                            top_angle) + row * top_side_cell_length * math.sin(right_angle)
+                    )
+                ]
+
+                # Add the points to the list of smaller quadrilaterals
+                small_quads.append(quad_points)
+
         # cv2.line(frame, (top_left[0], top_left[1]), (top_right[0], top_right[1]), (0, 255, 0), 2)
         # cv2.line(frame, (top_right[0], top_right[1]), (bottom_right[0], bottom_right[1]), (0, 255, 0), 2)
         # cv2.line(frame, (bottom_right[0], bottom_right[1]), (bottom_left[0], bottom_left[1]), (0, 255, 0), 2)
         # cv2.line(frame, (bottom_left[0], bottom_left[1]), (top_left[0], top_left[1]), (0, 255, 0), 2)
-        num_segments = 8
 
         top_divisions = np.linspace(top_left, top_right, num=num_segments + 1, endpoint=True)
         right_divisions = np.linspace(top_right, bottom_right, num=num_segments + 1, endpoint=True)
@@ -107,33 +167,37 @@ while True:
                 cv2.line(frame, (int(top_right[0]), int(top_right[1])), (int(bottom_right[0]), int(bottom_right[1])), color=(0, 255, 0),
                          thickness=2)
 
-        for i in range(num_segments):
-            for j in range(num_segments):
-                # Define the boundaries of the current grid cell
-                x_min, y_min = int(top_divisions[i][0]), int(top_divisions[i][1])
-                x_max, y_max = int(bottom_divisions[i][0]), int(bottom_divisions[i][1])
-
-                # Extract the region of interest from the original frame
-                roi = frame[y_min:y_max, x_min:x_max]
-
-                # Count the number of pixels in each mask
-                num_green_pixels = cv2.countNonZero(green_mask)
-                num_black_pixels = cv2.countNonZero(black_mask)
-                num_white_pixels = cv2.countNonZero(white_mask)
-
-                # Determine the predominant color and store it in the `grid_colors` array
-                if num_green_pixels > num_black_pixels and num_green_pixels > num_white_pixels:
-                    grid_colors[j][i] = 'G'
-                elif num_black_pixels > num_green_pixels and num_black_pixels > num_white_pixels:
-                    grid_colors[j][i] = 'B'
-                else:
-                    grid_colors[j][i] = 'W'
-
-        # Print out the color information for each grid cell
-        if cv2.waitKey(1) & 0xFF == ord(' '):
-            for row in grid_colors:
-                print(' '.join(row))
-            print("---------------")
+        # roi_colors = []
+        #
+        # for i in range(len(left_divisions) - 1):
+        #     for j in range(len(top_divisions) - 1):
+        #         x1, y1 = int(j * frame.shape[1] / 8), int(i * frame.shape[0] / 8)
+        #         x2, y2 = int((j + 1) * frame.shape[1] / 8), int((i + 1) * frame.shape[0] / 8)
+        #
+        #         # Apply the color masks to the original image
+        #         green_pixels = cv2.bitwise_and(frame[y1:y2, x1:x2], frame[y1:y2, x1:x2], mask=green_mask[y1:y2, x1:x2])
+        #         black_pixels = cv2.bitwise_and(frame[y1:y2, x1:x2], frame[y1:y2, x1:x2], mask=black_mask[y1:y2, x1:x2])
+        #         white_pixels = cv2.bitwise_and(frame[y1:y2, x1:x2], frame[y1:y2, x1:x2], mask=white_mask[y1:y2, x1:x2])
+        #
+        #         # Calculate the percentage of each color in the cell
+        #         green_percentage = np.count_nonzero(green_pixels) / ((x2 - x1) * (y2 - y1))
+        #         black_percentage = np.count_nonzero(black_pixels) / ((x2 - x1) * (y2 - y1))
+        #         white_percentage = np.count_nonzero(white_pixels) / ((x2 - x1) * (y2 - y1))
+        #
+        #         # Find the color with the highest percentage
+        #         max_percentage = max(green_percentage, white_percentage, black_percentage)
+        #         if green_percentage == max_percentage:
+        #             grid_colors[i][j] = '-'
+        #         elif black_percentage == max_percentage:
+        #             grid_colors[i][j] = 'X'
+        #         else:
+        #             grid_colors[i][j] = 'O'
+        #
+        # # Print out the color information for each grid cell
+        # if cv2.waitKey(1) & 0xFF == ord(' '):
+        #     for row in grid_colors:
+        #         print(' '.join(row))
+        #     print("---------------")
 
     # Display the resulting frame
     cv2.imshow('frame', frame)
