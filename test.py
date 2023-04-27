@@ -79,11 +79,6 @@ while True:
         right_side_cell_length = right_side / 8
         left_side_cell_length = left_side / 8
 
-        print("top", top_side_cell_length)
-        print("bottom", bottom_side_cell_length)
-        print("right", right_side_cell_length)
-        print("left", left_side_cell_length)
-
         # define the grid size
         num_segments = 8
 
@@ -100,44 +95,38 @@ while True:
         small_quads = []
 
         # Iterate over the rows and columns
-        for row in range(1):
-            for col in range(1):
+        for row in range(9):
+            for col in range(9):
                 # Define the points of the current smaller quadrilateral
                 quad_points = [
                     (
                         start_points[0][0] + col * left_side_cell_length * math.cos(
-                            top_angle) + row * top_side_cell_length * math.cos(left_angle),
+                            top_angle) - row * top_side_cell_length * math.cos(left_angle),
                         start_points[0][1] + col * left_side_cell_length * math.sin(
-                            top_angle) + row * top_side_cell_length * math.sin(left_angle)
-                    ),
-                    (
-                        start_points[1][0] + col * left_side_cell_length * math.cos(bottom_angle) + (
-                                    row + 1) * bottom_side_cell_length * math.cos(left_angle),
-                        start_points[1][1] + col * left_side_cell_length * math.sin(bottom_angle) + (
-                                    row + 1) * bottom_side_cell_length * math.sin(left_angle)
-                    ),
-                    (
-                        start_points[1][0] + (col + 1) * right_side_cell_length * math.cos(bottom_angle) + (
-                                    row + 1) * bottom_side_cell_length * math.cos(right_angle),
-                        start_points[1][1] + (col + 1) * right_side_cell_length * math.sin(bottom_angle) + (
-                                    row + 1) * bottom_side_cell_length * math.sin(right_angle)
-                    ),
-                    (
-                        start_points[0][0] + (col + 1) * right_side_cell_length * math.cos(
-                            top_angle) + row * top_side_cell_length * math.cos(right_angle),
-                        start_points[0][1] + (col + 1) * right_side_cell_length * math.sin(
-                            top_angle) + row * top_side_cell_length * math.sin(right_angle)
+                            top_angle) - row * top_side_cell_length * math.sin(left_angle)
                     )
+                    # (
+                    #     start_points[1][0] + col * left_side_cell_length * math.cos(bottom_angle) + (
+                    #             row + 1) * bottom_side_cell_length * math.cos(left_angle),
+                    #     start_points[1][1] + col * left_side_cell_length * math.sin(bottom_angle) + (
+                    #             row + 1) * bottom_side_cell_length * math.sin(left_angle)
+                    # ),
+                    # (
+                    #     start_points[1][0] + (col + 1) * right_side_cell_length * math.cos(bottom_angle) + (
+                    #             row + 1) * bottom_side_cell_length * math.cos(right_angle),
+                    #     start_points[1][1] + (col + 1) * right_side_cell_length * math.sin(bottom_angle) + (
+                    #             row + 1) * bottom_side_cell_length * math.sin(right_angle)
+                    # ),
+                    # (
+                    #     start_points[0][0] + (col + 1) * right_side_cell_length * math.cos(
+                    #         top_angle) + row * top_side_cell_length * math.cos(right_angle),
+                    #     start_points[0][1] + (col + 1) * right_side_cell_length * math.sin(
+                    #         top_angle) + row * top_side_cell_length * math.sin(right_angle)
+                    # )
                 ]
 
                 # Add the points to the list of smaller quadrilaterals
                 small_quads.append(quad_points)
-
-        # # Draw a quadrilateral for each smaller quadrilateral
-        # for quad in small_quads:
-        #     pts = np.array(quad, np.int32)
-        #     pts = pts.reshape((-1, 1, 2))
-        #     cv2.polylines(frame, [pts], True, (0, 0, 255), 2)
 
         # Draw red circles at each point in small_quads
         for quad in small_quads:
