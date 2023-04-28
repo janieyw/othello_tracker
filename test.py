@@ -83,16 +83,6 @@ while True:
         cv2.circle(frame, (bottom_right[0], bottom_right[1]), 20, (255, 0, 0), -1)  # Bottom Right
         cv2.circle(frame, (bottom_left[0], bottom_left[1]), 20, (255, 0, 0), -1)  # Bottom Left
 
-        # top_side = math.sqrt(pow(top_right[0] - top_left[0], 2) + pow(top_right[1] - top_left[1], 2))
-        # bottom_side = math.sqrt(pow(bottom_right[0] - bottom_left[0], 2) + pow(bottom_right[1] - bottom_left[1], 2))
-        # right_side = math.sqrt(pow(top_right[0] - bottom_right[0], 2) + pow(top_right[1] - bottom_right[1], 2))
-        # left_side = math.sqrt(pow(top_left[0] - bottom_left[0], 2) + pow(top_left[1] - bottom_left[1], 2))
-        #
-        # top_side_cell_length = top_side / 8
-        # bottom_side_cell_length = bottom_side / 8
-        # right_side_cell_length = right_side / 8
-        # left_side_cell_length = left_side / 8
-
         # define the grid size
         num_segments = 8
 
@@ -284,11 +274,6 @@ while True:
             # Display intersection points
             for point in intersection_points:
                 cv2.circle(frame, point, radius=5, color=(0, 0, 255), thickness=-1)
-
-        # cv2.circle(frame, (int(top_left[0]), int(top_left[1])), 20, (0, 255, 255), -1)  # Top left
-        # cv2.circle(frame, (int(top_right[0]), int(top_right[1])), 20, (0, 255, 255), -1)  # Top Right
-        # cv2.circle(frame, (int(bottom_right[0]), int(bottom_right[1])), 20, (0, 255, 255), -1)  # Bottom Right
-        # cv2.circle(frame, (int(bottom_left[0]), int(bottom_left[1])), 20, (0, 255, 255), -1)  # Bottom Left
 
         # for i in range(num_segments + 1):
         #     for j in range(num_segments + 1):
