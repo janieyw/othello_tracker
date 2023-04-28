@@ -64,10 +64,10 @@ while True:
 
         top_left, top_right, bottom_right, bottom_left = largest_contour.reshape(4, 2)
 
-        cv2.circle(frame, (top_left[0], top_left[1]), 10, (0, 0, 255), -1)  # Top left
-        cv2.circle(frame, (top_right[0], top_right[1]), 10, (255, 0, 0), -1)  # Top Right
-        cv2.circle(frame, (bottom_right[0], bottom_right[1]), 10, (255, 0, 0), -1)  # Bottom Right
-        cv2.circle(frame, (bottom_left[0], bottom_left[1]), 10, (255, 0, 0), -1)  # Bottom Left
+        cv2.circle(frame, (top_left[0], top_left[1]), 20, (255, 0, 0), -1)  # Top left
+        cv2.circle(frame, (top_right[0], top_right[1]), 20, (255, 0, 0), -1)  # Top Right
+        cv2.circle(frame, (bottom_right[0], bottom_right[1]), 20, (255, 0, 0), -1)  # Bottom Right
+        cv2.circle(frame, (bottom_left[0], bottom_left[1]), 20, (255, 0, 0), -1)  # Bottom Left
 
         # top_side = math.sqrt(pow(top_right[0] - top_left[0], 2) + pow(top_right[1] - top_left[1], 2))
         # bottom_side = math.sqrt(pow(bottom_right[0] - bottom_left[0], 2) + pow(bottom_right[1] - bottom_left[1], 2))
@@ -108,10 +108,20 @@ while True:
         grid_points = []
         for i in range(9):
             for j in range(9):
-                x = top_left[0] + i * (top_side_length / 8) * np.cos(top_side_angle) + j * (
-                            left_side_length / 8) * np.cos(left_side_angle)
+                # x = top_left[0] + i * (top_side_length / 8) * np.cos(top_side_angle) + j * (
+                #             left_side_length / 8) * np.cos(left_side_angle)
+                # y = top_left[1] + i * (top_side_length / 8) * np.sin(top_side_angle) + j * (
+                #             left_side_length / 8) * np.sin(left_side_angle)
+                # grid_points.append((x, y))
+                # x = bottom_left[0] + i * (bottom_side_length / 8) * np.cos(bottom_side_angle) + j * (
+                #             left_side_length / 8) * np.cos(left_side_angle)
+                # y = top_left[1] + i * (top_side_length / 8) * np.sin(top_side_angle) + j * (
+                #             left_side_length / 8) * np.sin(left_side_angle)
+                # grid_points.append((x, y))
+                x = bottom_left[0] + i * (bottom_side_length / 8) * np.cos(bottom_side_angle) + j * (
+                        left_side_length / 8) * np.cos(left_side_angle)
                 y = top_left[1] + i * (top_side_length / 8) * np.sin(top_side_angle) + j * (
-                            left_side_length / 8) * np.sin(left_side_angle)
+                        left_side_length / 8) * np.sin(left_side_angle)
                 grid_points.append((x, y))
 
         # # Calculate the length and angle of each side of the quadrilateral
@@ -191,11 +201,6 @@ while True:
             x, y = int(point[0]), int(point[1])
             cv2.circle(frame, (x, y), 8, (0, 0, 255), -1)
 
-        # cv2.line(frame, (top_left[0], top_left[1]), (top_right[0], top_right[1]), (0, 255, 0), 2)
-        # cv2.line(frame, (top_right[0], top_right[1]), (bottom_right[0], bottom_right[1]), (0, 255, 0), 2)
-        # cv2.line(frame, (bottom_right[0], bottom_right[1]), (bottom_left[0], bottom_left[1]), (0, 255, 0), 2)
-        # cv2.line(frame, (bottom_left[0], bottom_left[1]), (top_left[0], top_left[1]), (0, 255, 0), 2)
-
         top_divisions = np.linspace(top_left, top_right, num=num_segments + 1, endpoint=True)
         right_divisions = np.linspace(top_right, bottom_right, num=num_segments + 1, endpoint=True)
         bottom_divisions = np.linspace(bottom_right, bottom_left, num=num_segments + 1, endpoint=True)
@@ -230,6 +235,31 @@ while True:
                          thickness=2)
                 cv2.line(frame, (int(top_right[0]), int(top_right[1])), (int(bottom_right[0]), int(bottom_right[1])), color=(0, 255, 0),
                          thickness=2)
+
+        # cv2.line(frame, (int(top_left[0]), int(top_left[1])), (int(top_right[0]), int(top_right[1])), (159, 43, 104), 8)
+        # cv2.line(frame, (top_right[0], top_right[1]), (bottom_right[0], bottom_right[1]), (0, 255, 0), 2)
+        # cv2.line(frame, (bottom_right[0], bottom_right[1]), (bottom_left[0], bottom_left[1]), (0, 255, 0), 2)
+        # cv2.line(frame, (bottom_left[0], bottom_left[1]), (top_left[0], top_left[1]), (0, 255, 0), 2)
+
+        # cv2.circle(frame, (int(top_left[0]), int(top_left[1])), 20, (0, 255, 255), -1)  # Top left
+        # cv2.circle(frame, (int(top_right[0]), int(top_right[1])), 20, (0, 255, 255), -1)  # Top Right
+        # cv2.circle(frame, (int(bottom_right[0]), int(bottom_right[1])), 20, (0, 255, 255), -1)  # Bottom Right
+        # cv2.circle(frame, (int(bottom_left[0]), int(bottom_left[1])), 20, (0, 255, 255), -1)  # Bottom Left
+
+        for i in range(num_segments + 1):
+            for j in range(num_segments + 1):
+                point = [0, 0]  # initialize point variable
+                if i <= num_segments and j <= num_segments:
+                    point = top_divisions_flipped[i, :]  # top-left corner of smaller quadrilateral
+                elif i > num_segments and j <= num_segments:
+                    point = bottom_divisions[i - num_segments - 1, :]  # bottom-left corner of smaller quadrilateral
+                elif i <= num_segments and j > num_segments:
+                    point = left_divisions_flipped[j - num_segments - 1, :]  # top-right corner of smaller quadrilateral
+                else:
+                    point = right_divisions[j - num_segments - 1, :]  # top-left corner of smaller quadrilateral
+
+                # draw point on video frame
+                cv2.circle(frame, (int(point[0]), int(point[1])), 20, (0, 255, 255), -1)
 
         # roi_colors = []
         #
