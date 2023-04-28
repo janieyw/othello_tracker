@@ -69,15 +69,15 @@ while True:
         cv2.circle(frame, (bottom_right[0], bottom_right[1]), 10, (255, 0, 0), -1)  # Bottom Right
         cv2.circle(frame, (bottom_left[0], bottom_left[1]), 10, (255, 0, 0), -1)  # Bottom Left
 
-        top_side = math.sqrt(pow(top_right[0] - top_left[0], 2) + pow(top_right[1] - top_left[1], 2))
-        bottom_side = math.sqrt(pow(bottom_right[0] - bottom_left[0], 2) + pow(bottom_right[1] - bottom_left[1], 2))
-        right_side = math.sqrt(pow(top_right[0] - bottom_right[0], 2) + pow(top_right[1] - bottom_right[1], 2))
-        left_side = math.sqrt(pow(top_left[0] - bottom_left[0], 2) + pow(top_left[1] - bottom_left[1], 2))
-
-        top_side_cell_length = top_side / 8
-        bottom_side_cell_length = bottom_side / 8
-        right_side_cell_length = right_side / 8
-        left_side_cell_length = left_side / 8
+        # top_side = math.sqrt(pow(top_right[0] - top_left[0], 2) + pow(top_right[1] - top_left[1], 2))
+        # bottom_side = math.sqrt(pow(bottom_right[0] - bottom_left[0], 2) + pow(bottom_right[1] - bottom_left[1], 2))
+        # right_side = math.sqrt(pow(top_right[0] - bottom_right[0], 2) + pow(top_right[1] - bottom_right[1], 2))
+        # left_side = math.sqrt(pow(top_left[0] - bottom_left[0], 2) + pow(top_left[1] - bottom_left[1], 2))
+        #
+        # top_side_cell_length = top_side / 8
+        # bottom_side_cell_length = bottom_side / 8
+        # right_side_cell_length = right_side / 8
+        # left_side_cell_length = left_side / 8
 
         # define the grid size
         num_segments = 8
@@ -91,48 +91,105 @@ while True:
         left_angle = math.atan2(top_left[1] - bottom_left[1], top_left[0] - bottom_left[0])
         right_angle = math.atan2(top_right[1] - bottom_right[1], top_right[0] - bottom_right[0])
 
-        # Create an empty list to store the points of each smaller quadrilateral
-        small_quads = []
+        # Calculate the length and angle of each side of the quadrilateral
+        top_side_length = np.linalg.norm(np.array(top_right) - np.array(top_left))
+        top_side_angle = np.arctan2(top_right[1] - top_left[1], top_right[0] - top_left[0])
 
-        # Iterate over the rows and columns
-        for row in range(9):
-            for col in range(9):
-                # Define the points of the current smaller quadrilateral
-                quad_points = [
-                    (
-                        start_points[0][0] + col * left_side_cell_length * math.cos(
-                            top_angle) - row * top_side_cell_length * math.cos(left_angle),
-                        start_points[0][1] + col * left_side_cell_length * math.sin(
-                            top_angle) - row * top_side_cell_length * math.sin(left_angle)
-                    )
-                    # (
-                    #     start_points[1][0] + col * left_side_cell_length * math.cos(bottom_angle) + (
-                    #             row + 1) * bottom_side_cell_length * math.cos(left_angle),
-                    #     start_points[1][1] + col * left_side_cell_length * math.sin(bottom_angle) + (
-                    #             row + 1) * bottom_side_cell_length * math.sin(left_angle)
-                    # ),
-                    # (
-                    #     start_points[1][0] + (col + 1) * right_side_cell_length * math.cos(bottom_angle) + (
-                    #             row + 1) * bottom_side_cell_length * math.cos(right_angle),
-                    #     start_points[1][1] + (col + 1) * right_side_cell_length * math.sin(bottom_angle) + (
-                    #             row + 1) * bottom_side_cell_length * math.sin(right_angle)
-                    # ),
-                    # (
-                    #     start_points[0][0] + (col + 1) * right_side_cell_length * math.cos(
-                    #         top_angle) + row * top_side_cell_length * math.cos(right_angle),
-                    #     start_points[0][1] + (col + 1) * right_side_cell_length * math.sin(
-                    #         top_angle) + row * top_side_cell_length * math.sin(right_angle)
-                    # )
-                ]
+        right_side_length = np.linalg.norm(np.array(bottom_right) - np.array(top_right))
+        right_side_angle = np.arctan2(bottom_right[1] - top_right[1], bottom_right[0] - top_right[0])
 
-                # Add the points to the list of smaller quadrilaterals
-                small_quads.append(quad_points)
+        bottom_side_length = np.linalg.norm(np.array(bottom_left) - np.array(bottom_right))
+        bottom_side_angle = np.arctan2(bottom_left[1] - bottom_right[1], bottom_left[0] - bottom_right[0])
 
-        # Draw red circles at each point in small_quads
-        for quad in small_quads:
-            for point in quad:
-                x, y = int(point[0]), int(point[1])
-                cv2.circle(frame, (x, y), 8, (0, 0, 255), -1)
+        left_side_length = np.linalg.norm(np.array(top_left) - np.array(bottom_left))
+        left_side_angle = np.arctan2(top_left[1] - bottom_left[1], top_left[0] - bottom_left[0])
+
+        # Divide each side of the quadrilateral into eight segments to create the grid
+        grid_points = []
+        for i in range(9):
+            for j in range(9):
+                x = top_left[0] + i * (top_side_length / 8) * np.cos(top_side_angle) + j * (
+                            left_side_length / 8) * np.cos(left_side_angle)
+                y = top_left[1] + i * (top_side_length / 8) * np.sin(top_side_angle) + j * (
+                            left_side_length / 8) * np.sin(left_side_angle)
+                grid_points.append((x, y))
+
+        # # Calculate the length and angle of each side of the quadrilateral
+        # side_lengths = []
+        # side_angles = []
+        # for i in range(4):
+        #     j = (i + 1) % 4
+        #     dx = corners[j][0] - corners[i][0]
+        #     dy = corners[j][1] - corners[i][1]
+        #     length = math.sqrt(dx * dx + dy * dy)
+        #     angle = math.atan2(dy, dx)
+        #     side_lengths.append(length)
+        #     side_angles.append(angle)
+        #
+        # # Divide each side into eight equal segments
+        # cell_lengths = [l / 8 for l in side_lengths]
+        #
+        # # Initialize the 2D array to store the coordinates of each cell's four corners
+        # cell_corners = np.zeros((8, 8, 4, 2), dtype=np.int32)
+        #
+        # # Calculate the coordinates of each cell's four corners
+        # for i in range(8):
+        #     for j in range(8):
+        #         # Calculate the coordinates of the four intersection points
+        #         x1 = corners[0][0] + (i / 8) * math.cos(side_angles[0]) * side_lengths[0]
+        #         y1 = corners[0][1] + (i / 8) * math.sin(side_angles[0]) * side_lengths[0]
+        #         x2 = corners[1][0] + (j / 8) * math.cos(side_angles[1]) * side_lengths[1]
+        #         y2 = corners[1][1] + (j / 8) * math.sin(side_angles[1]) * side_lengths[1]
+        #         x3 = corners[2][0] + ((7 - i) / 8) * math.cos(side_angles[2]) * side_lengths[2]
+        #         y3 = corners[2][1] + ((7 - i) / 8) * math.sin(side_angles[2]) * side_lengths[2]
+        #         x4 = corners[3][0] + ((7 - j) / 8) * math.cos(side_angles[3]) * side_lengths[3]
+        #         y4 = corners[3][1] + ((7 - j) / 8) * math.sin(side_angles[3]) * side_lengths[3]
+        #         # Store the coordinates in the cell_corners array
+        #         cell_corners[i, j, 0] = [x1, y1]
+        #         cell_corners[i, j, 1] = [x2, y2]
+        #         cell_corners[i, j, 2] = [x3, y3]
+        #         cell_corners[i, j, 3] = [x4, y4]
+        #
+        # # Create an empty list to store the points of each smaller quadrilateral
+        # small_quads = []
+
+        # # Iterate over the rows and columns
+        # for row in range(9):
+        #     for col in range(9):
+        #         # Define the points of the current smaller quadrilateral
+        #         quad_points = [
+        #             (
+        #                 start_points[0][0] + col * left_side_cell_length * math.cos(
+        #                     top_angle) - row * top_side_cell_length * math.cos(left_angle),
+        #                 start_points[0][1] + col * left_side_cell_length * math.sin(
+        #                     top_angle) - row * top_side_cell_length * math.sin(left_angle)
+        #             )
+        #             # (
+        #             #     start_points[1][0] + col * left_side_cell_length * math.cos(bottom_angle) + (
+        #             #             row + 1) * bottom_side_cell_length * math.cos(left_angle),
+        #             #     start_points[1][1] + col * left_side_cell_length * math.sin(bottom_angle) + (
+        #             #             row + 1) * bottom_side_cell_length * math.sin(left_angle)
+        #             # ),
+        #             # (
+        #             #     start_points[1][0] + (col + 1) * right_side_cell_length * math.cos(bottom_angle) + (
+        #             #             row + 1) * bottom_side_cell_length * math.cos(right_angle),
+        #             #     start_points[1][1] + (col + 1) * right_side_cell_length * math.sin(bottom_angle) + (
+        #             #             row + 1) * bottom_side_cell_length * math.sin(right_angle)
+        #             # ),
+        #             # (
+        #             #     start_points[0][0] + (col + 1) * right_side_cell_length * math.cos(
+        #             #         top_angle) + row * top_side_cell_length * math.cos(right_angle),
+        #             #     start_points[0][1] + (col + 1) * right_side_cell_length * math.sin(
+        #             #         top_angle) + row * top_side_cell_length * math.sin(right_angle)
+        #             # )
+        #         ]
+        #
+        #         # Add the points to the list of smaller quadrilaterals
+        #         small_quads.append(quad_points)
+
+        for point in grid_points:
+            x, y = int(point[0]), int(point[1])
+            cv2.circle(frame, (x, y), 8, (0, 0, 255), -1)
 
         cv2.line(frame, (top_left[0], top_left[1]), (top_right[0], top_right[1]), (0, 255, 0), 2)
         # cv2.line(frame, (top_right[0], top_right[1]), (bottom_right[0], bottom_right[1]), (0, 255, 0), 2)
