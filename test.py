@@ -191,7 +191,7 @@ while True:
             x, y = int(point[0]), int(point[1])
             cv2.circle(frame, (x, y), 8, (0, 0, 255), -1)
 
-        cv2.line(frame, (top_left[0], top_left[1]), (top_right[0], top_right[1]), (0, 255, 0), 2)
+        # cv2.line(frame, (top_left[0], top_left[1]), (top_right[0], top_right[1]), (0, 255, 0), 2)
         # cv2.line(frame, (top_right[0], top_right[1]), (bottom_right[0], bottom_right[1]), (0, 255, 0), 2)
         # cv2.line(frame, (bottom_right[0], bottom_right[1]), (bottom_left[0], bottom_left[1]), (0, 255, 0), 2)
         # cv2.line(frame, (bottom_left[0], bottom_left[1]), (top_left[0], top_left[1]), (0, 255, 0), 2)
