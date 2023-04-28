@@ -2,6 +2,21 @@ import cv2
 import numpy as np
 import math
 
+def compute_intersection(line1, line2):
+    x1, y1, x2, y2 = line1
+    x3, y3, x4, y4 = line2
+    den = (y4 - y3) * (x2 - x1) - (x4 - x3) * (y2 - y1)
+    if den == 0:
+        return None
+    ua = ((x4 - x3) * (y1 - y3) - (y4 - y3) * (x1 - x3)) / den
+    ub = ((x2 - x1) * (y1 - y3) - (y2 - y1) * (x1 - x3)) / den
+    if ua >= 0 and ua <= 1 and ub >= 0 and ub <= 1:
+        x = x1 + ua * (x2 - x1)
+        y = y1 + ua * (y2 - y1)
+        return (int(x), int(y))
+    else:
+        return None
+
 # Set up the video capture device (usually 0 for built-in webcam)
 cap = cv2.VideoCapture(0)
 
@@ -210,6 +225,8 @@ while True:
         right_divisions_flipped = np.flip(right_divisions, axis=0)
         bottom_divisions_flipped = np.flip(bottom_divisions, axis=0)
 
+        intersection_points = []
+
         # Draw lines connecting corresponding segments on opposite sides
         for i in range(num_segments):
             for j in range(num_segments):
@@ -246,6 +263,27 @@ while True:
                 cv2.circle(frame, (int(right_top[0]), int(right_top[1])), radius=5, color=(255, 0, 0), thickness=-1)
                 cv2.circle(frame, (int(right_bottom[0]), int(right_bottom[1])), radius=5, color=(255, 0, 0),
                            thickness=-1)
+
+                # Draw smaller quadrilateral
+                points = np.array([top_left, top_right, bottom_right, bottom_left])
+
+                # Draw lines connecting opposite sides
+                line1 = (int(left_top[0]), int(left_top[1]), int(right_top[0]), int(right_top[1]))
+                line2 = (int(left_bottom[0]), int(left_bottom[1]), int(right_bottom[0]), int(right_bottom[1]))
+                line3 = (int(top_left[0]), int(top_left[1]), int(bottom_left[0]), int(bottom_left[1]))
+                line4 = (int(top_right[0]), int(top_right[1]), int(bottom_right[0]), int(bottom_right[1]))
+
+                # Compute intersection points
+                for line in [line1, line2, line3, line4]:
+                    for other_line in [line1, line2, line3, line4]:
+                        if line != other_line:
+                            intersection_point = compute_intersection(line, other_line)
+                            if intersection_point is not None:
+                                intersection_points.append(intersection_point)
+
+            # Display intersection points
+            for point in intersection_points:
+                cv2.circle(frame, point, radius=5, color=(0, 0, 255), thickness=-1)
 
         # cv2.circle(frame, (int(top_left[0]), int(top_left[1])), 20, (0, 255, 255), -1)  # Top left
         # cv2.circle(frame, (int(top_right[0]), int(top_right[1])), 20, (0, 255, 255), -1)  # Top Right
