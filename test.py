@@ -232,15 +232,15 @@ while True:
                 # Draw smaller quadrilateral
                 points = np.array([top_left, top_right, bottom_right, bottom_left])
 
-                # # Draw lines connecting opposite sides
-                cv2.line(frame, (int(left_top[0]), int(left_top[1])), (int(right_top[0]), int(right_top[1])), color=(0, 255, 0),
-                         thickness=2)
-                cv2.line(frame, (int(left_bottom[0]), int(left_bottom[1])), (int(right_bottom[0]), int(right_bottom[1])), color=(0, 255, 0),
-                         thickness=2) # Left side
-                cv2.line(frame, (int(top_left[0]), int(top_left[1])), (int(bottom_left[0]), int(bottom_left[1])), color=(0, 255, 0),
-                         thickness=2)
-                cv2.line(frame, (int(top_right[0]), int(top_right[1])), (int(bottom_right[0]), int(bottom_right[1])), color=(0, 255, 0),
-                         thickness=2)
+                # # # Draw lines connecting opposite sides
+                # cv2.line(frame, (int(left_top[0]), int(left_top[1])), (int(right_top[0]), int(right_top[1])), color=(0, 255, 0),
+                #          thickness=2)
+                # cv2.line(frame, (int(left_bottom[0]), int(left_bottom[1])), (int(right_bottom[0]), int(right_bottom[1])), color=(0, 255, 0),
+                #          thickness=2) # Left side
+                # cv2.line(frame, (int(top_left[0]), int(top_left[1])), (int(bottom_left[0]), int(bottom_left[1])), color=(0, 255, 0),
+                #          thickness=2)
+                # cv2.line(frame, (int(top_right[0]), int(top_right[1])), (int(bottom_right[0]), int(bottom_right[1])), color=(0, 255, 0),
+                #          thickness=2)
 
                 # Add outer points of the quadrilateral
                 intersection_points.append((int(top_left[0]), int(top_left[1])))
