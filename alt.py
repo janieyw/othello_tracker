@@ -94,7 +94,7 @@ while True:
             cv2.line(frame, (x1, y1), (x2, y2), (0, 0, 255), 2)
 
     # Display the original frame with the detected disks and grid
-    cv2.imshow('frame', frame)
+    cv2.imshow('Othello Tracker', frame)
 
     # Check for the 'q' key to quit the program
     if cv2.waitKey(1) & 0xFF == ord('q'):
@@ -259,7 +259,7 @@ cv2.destroyAllWindows()
 #         detect_grid(frame)
 #
 #         # Display the processed frame
-#         cv2.imshow('othello game', frame)
+#         cv2.imshow('Othello Tracker', frame)
 #
 #         # Exit if the user presses 'q'
 #         if cv2.waitKey(1) == ord('q'):

@@ -72,16 +72,18 @@ while True:
             largest_contour = approx
             break
 
+    intersection_points = []
+
     # Draw a green outline around the largest contour
     if largest_contour is not None:
         # cv2.drawContours(frame, [largest_contour], 0, (0, 255, 0), 2)
 
         top_left, top_right, bottom_right, bottom_left = largest_contour.reshape(4, 2)
 
-        cv2.circle(frame, (top_left[0], top_left[1]), 20, (255, 0, 0), -1)  # Top left
-        cv2.circle(frame, (top_right[0], top_right[1]), 20, (255, 0, 0), -1)  # Top Right
-        cv2.circle(frame, (bottom_right[0], bottom_right[1]), 20, (255, 0, 0), -1)  # Bottom Right
-        cv2.circle(frame, (bottom_left[0], bottom_left[1]), 20, (255, 0, 0), -1)  # Bottom Left
+        # cv2.circle(frame, (top_left[0], top_left[1]), 20, (255, 0, 0), -1)  # Top left
+        # cv2.circle(frame, (top_right[0], top_right[1]), 20, (255, 0, 0), -1)  # Top Right
+        # cv2.circle(frame, (bottom_right[0], bottom_right[1]), 20, (255, 0, 0), -1)  # Bottom Right
+        # cv2.circle(frame, (bottom_left[0], bottom_left[1]), 20, (255, 0, 0), -1)  # Bottom Left
 
         # define the grid size
         num_segments = 8
@@ -215,8 +217,6 @@ while True:
         right_divisions_flipped = np.flip(right_divisions, axis=0)
         bottom_divisions_flipped = np.flip(bottom_divisions, axis=0)
 
-        intersection_points = []
-
         # Draw lines connecting corresponding segments on opposite sides
         for i in range(num_segments):
             for j in range(num_segments):
@@ -232,7 +232,7 @@ while True:
                 # Draw smaller quadrilateral
                 points = np.array([top_left, top_right, bottom_right, bottom_left])
 
-                # Draw lines connecting opposite sides
+                # # Draw lines connecting opposite sides
                 cv2.line(frame, (int(left_top[0]), int(left_top[1])), (int(right_top[0]), int(right_top[1])), color=(0, 255, 0),
                          thickness=2)
                 cv2.line(frame, (int(left_bottom[0]), int(left_bottom[1])), (int(right_bottom[0]), int(right_bottom[1])), color=(0, 255, 0),
@@ -242,20 +242,15 @@ while True:
                 cv2.line(frame, (int(top_right[0]), int(top_right[1])), (int(bottom_right[0]), int(bottom_right[1])), color=(0, 255, 0),
                          thickness=2)
 
-                # Draw circles at each point (on the sides of the larger quadrilateral)
-                cv2.circle(frame, (int(top_left[0]), int(top_left[1])), radius=5, color=(255, 0, 0), thickness=-1)
-                cv2.circle(frame, (int(top_right[0]), int(top_right[1])), radius=5, color=(255, 0, 0), thickness=-1)
-                cv2.circle(frame, (int(bottom_left[0]), int(bottom_left[1])), radius=5, color=(255, 0, 0), thickness=-1)
-                cv2.circle(frame, (int(bottom_right[0]), int(bottom_right[1])), radius=5, color=(255, 0, 0),
-                           thickness=-1)
-                cv2.circle(frame, (int(left_top[0]), int(left_top[1])), radius=5, color=(255, 0, 0), thickness=-1)
-                cv2.circle(frame, (int(left_bottom[0]), int(left_bottom[1])), radius=5, color=(255, 0, 0), thickness=-1)
-                cv2.circle(frame, (int(right_top[0]), int(right_top[1])), radius=5, color=(255, 0, 0), thickness=-1)
-                cv2.circle(frame, (int(right_bottom[0]), int(right_bottom[1])), radius=5, color=(255, 0, 0),
-                           thickness=-1)
-
-                # Draw smaller quadrilateral
-                points = np.array([top_left, top_right, bottom_right, bottom_left])
+                # Add outer points of the quadrilateral
+                intersection_points.append((int(top_left[0]), int(top_left[1])))
+                intersection_points.append((int(top_right[0]), int(top_right[1])))
+                intersection_points.append((int(bottom_left[0]), int(bottom_left[1])))
+                intersection_points.append((int(bottom_right[0]), int(bottom_right[1])))
+                intersection_points.append((int(left_top[0]), int(left_top[1])))
+                intersection_points.append((int(left_bottom[0]), int(left_bottom[1])))
+                intersection_points.append((int(right_top[0]), int(right_top[1])))
+                intersection_points.append((int(right_bottom[0]), int(right_bottom[1])))
 
                 # Draw lines connecting opposite sides
                 line1 = (int(left_top[0]), int(left_top[1]), int(right_top[0]), int(right_top[1]))
@@ -271,24 +266,9 @@ while True:
                             if intersection_point is not None:
                                 intersection_points.append(intersection_point)
 
-            # Display intersection points
-            for point in intersection_points:
-                cv2.circle(frame, point, radius=5, color=(0, 0, 255), thickness=-1)
-
-        # for i in range(num_segments + 1):
-        #     for j in range(num_segments + 1):
-        #         point = [0, 0]  # initialize point variable
-        #         if i <= num_segments and j <= num_segments:
-        #             point = top_divisions_flipped[i, :]  # top-left corner of smaller quadrilateral
-        #         elif i > num_segments and j <= num_segments:
-        #             point = bottom_divisions[i - num_segments - 1, :]  # bottom-left corner of smaller quadrilateral
-        #         elif i <= num_segments and j > num_segments:
-        #             point = left_divisions_flipped[j - num_segments - 1, :]  # top-right corner of smaller quadrilateral
-        #         else:
-        #             point = right_divisions[j - num_segments - 1, :]  # top-left corner of smaller quadrilateral
-        #
-        #         # draw point on video frame
-        #         cv2.circle(frame, (int(point[0]), int(point[1])), 20, (0, 255, 255), -1)
+        # Display intersection points
+        for point in intersection_points:
+            cv2.circle(frame, point, radius=20, color=(0, 0, 255), thickness=-1)
 
         # roi_colors = []
         #
@@ -323,7 +303,7 @@ while True:
         #     print("---------------")
 
     # Display the resulting frame
-    cv2.imshow('frame', frame)
+    cv2.imshow('Othello Tracker', frame)
 
     # Check for 'q' key press to exit
     if cv2.waitKey(1) & 0xFF == ord('q'):

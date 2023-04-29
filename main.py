@@ -61,7 +61,7 @@ while True:
             cv2.line(frame, tuple(map(int, left_divisions[i])), tuple(map(int, right_divisions[i])), (0, 255, 0), 5)
 
     # Display the resulting frame
-    cv2.imshow('frame', frame)
+    cv2.imshow('Othello Tracker', frame)
 
     # Wait for a key press and check if it is the 'q' key to quit
     if cv2.waitKey(1) & 0xFF == ord('q'):
