@@ -232,7 +232,7 @@ while True:
                 # Draw smaller quadrilateral
                 points = np.array([top_left, top_right, bottom_right, bottom_left])
 
-                # # # Draw lines connecting opposite sides
+                # # Draw lines connecting opposite sides
                 # cv2.line(frame, (int(left_top[0]), int(left_top[1])), (int(right_top[0]), int(right_top[1])), color=(0, 255, 0),
                 #          thickness=2)
                 # cv2.line(frame, (int(left_bottom[0]), int(left_bottom[1])), (int(right_bottom[0]), int(right_bottom[1])), color=(0, 255, 0),
