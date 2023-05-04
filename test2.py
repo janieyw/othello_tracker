@@ -74,6 +74,8 @@ while True:
             break
 
     intersection_points = []
+    ver_lines = set()
+    hor_lines = set()
 
     # Draw a green outline around the largest contour
     if largest_contour is not None:
@@ -152,13 +154,10 @@ while True:
                 line3 = (int(top_left[0]), int(top_left[1]), int(bottom_left[0]), int(bottom_left[1]))
                 line4 = (int(top_right[0]), int(top_right[1]), int(bottom_right[0]), int(bottom_right[1]))
 
-                # Compute intersection points
-                for line in [line1, line2, line3, line4]:
-                    for other_line in [line1, line2, line3, line4]:
-                        if line != other_line:
-                            point = compute_intersection(line, other_line)
-                            if point is not None and point not in intersection_points:
-                                intersection_points.append(point)
+                ver_lines.add(line1)
+                ver_lines.add(line2)
+                hor_lines.add(line3)
+                hor_lines.add(line4)
 
                 # Add outer points of the quadrilateral if they haven't been added yet
                 outer_points = [(int(top_left[0]), int(top_left[1])),
@@ -174,9 +173,15 @@ while True:
                     if outer_points[p] not in intersection_points:
                         intersection_points.append(outer_points[p])
 
-        # # Display intersection points
-        # for point in intersection_points:
-        #     cv2.circle(frame, point, radius=10, color=(0, 0, 255), thickness=-1)
+        for i in range(num_segments):
+            for j in range(num_segments):
+
+                # Compute intersection points
+                for v_line in ver_lines:
+                    for h_line in hor_lines:
+                        intersection_point = compute_intersection(v_line, h_line)
+                        if intersection_point is not None and intersection_point not in intersection_points:
+                            intersection_points.append(intersection_point)
 
         # Define the starting blue value
         blue_value = 0

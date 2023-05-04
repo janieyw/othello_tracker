@@ -124,6 +124,8 @@ while True:
         # Draw lines connecting corresponding segments on opposite sides
         for i in range(num_segments):
             for j in range(num_segments):
+                if i == j:
+                    continue
                 top_left = top_divisions_flipped[i, :]
                 top_right = top_divisions_flipped[i + 1, :]
                 bottom_left = bottom_divisions[i, :]
