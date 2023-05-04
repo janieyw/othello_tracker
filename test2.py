@@ -159,29 +159,30 @@ while True:
                 hor_lines.add(line3)
                 hor_lines.add(line4)
 
-                # Add outer points of the quadrilateral if they haven't been added yet
-                outer_points = [(int(top_left[0]), int(top_left[1])),
-                                (int(top_right[0]), int(top_right[1])),
-                                (int(bottom_left[0]), int(bottom_left[1])),
-                                (int(bottom_right[0]), int(bottom_right[1])),
-                                (int(left_top[0]), int(left_top[1])),
-                                (int(left_bottom[0]), int(left_bottom[1])),
-                                (int(right_top[0]), int(right_top[1])),
-                                (int(right_bottom[0]), int(right_bottom[1]))]
+                # # Add outer points of the quadrilateral if they haven't been added yet
+                # outer_points = [(int(top_left[0]), int(top_left[1])),
+                #                 (int(top_right[0]), int(top_right[1])),
+                #                 (int(bottom_left[0]), int(bottom_left[1])),
+                #                 (int(bottom_right[0]), int(bottom_right[1])),
+                #                 (int(left_top[0]), int(left_top[1])),
+                #                 (int(left_bottom[0]), int(left_bottom[1])),
+                #                 (int(right_top[0]), int(right_top[1])),
+                #                 (int(right_bottom[0]), int(right_bottom[1]))]
+                #
+                # for p in range(len(outer_points)):
+                #     if outer_points[p] not in intersection_points:
+                #         intersection_points.append(outer_points[p])
 
-                for p in range(len(outer_points)):
-                    if outer_points[p] not in intersection_points:
-                        intersection_points.append(outer_points[p])
-
-        for i in range(num_segments):
-            for j in range(num_segments):
-
-                # Compute intersection points
-                for v_line in ver_lines:
-                    for h_line in hor_lines:
-                        intersection_point = compute_intersection(v_line, h_line)
-                        if intersection_point is not None and intersection_point not in intersection_points:
-                            intersection_points.append(intersection_point)
+        for v_line in ver_lines:
+            for h_line in hor_lines:
+                start_v = (v_line[0], v_line[1])
+                end_v = (v_line[2], v_line[3])
+                start_h = (h_line[0], h_line[1])
+                end_h = (h_line[2], h_line[3])
+                cv2.line(frame, start_v, end_v, color=(0, 255, 0), thickness=2)
+                cv2.line(frame, start_h, end_h, color=(0, 255, 0), thickness=2)
+                intersection_point = compute_intersection(v_line, h_line)
+                intersection_points.append(intersection_point)
 
         # Define the starting blue value
         blue_value = 0
