@@ -32,16 +32,9 @@ while True:
     hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
 
     # Define the green, black, and white color ranges to detect
-    lower_green = np.array([40, 50, 50])
-    upper_green = np.array([80, 255, 255])
-    lower_black = np.array([0, 0, 0])
-    upper_black = np.array([180, 255, 50])
-    lower_white = np.array([0, 0, 150])
-    upper_white = np.array([180, 30, 255])
-
-    green_mask = cv2.inRange(hsv, lower_green, upper_green)
-    black_mask = cv2.inRange(hsv, lower_black, upper_black)
-    white_mask = cv2.inRange(hsv, lower_white, upper_white)
+    green_mask = cv2.inRange(hsv, (40, 60, 60), (80, 255, 255))  # (36, 25, 25), (86, 255, 255)
+    black_mask = cv2.inRange(hsv, (0, 0, 0), (180, 255, 50))
+    white_mask = cv2.inRange(hsv, (0, 0, 150), (180, 30, 255))
 
     # Apply morphological operations to fill any gaps in the masks
     kernel = np.ones((5, 5), np.uint8)
@@ -74,8 +67,6 @@ while True:
             break
 
     intersection_points = []
-    ver_lines = set()
-    hor_lines = set()
 
     # Draw a green outline around the largest contour
     if largest_contour is not None:
@@ -91,8 +82,8 @@ while True:
         # define the grid size
         num_segments = 8
 
-        # Define the starting points of the quadrilateral
-        start_points = [top_left, bottom_left, bottom_right, top_right]
+        ver_lines = set()
+        hor_lines = set()
 
         # Calculate the angles of the sides
         top_angle = math.atan2(top_right[1] - top_left[1], top_right[0] - top_left[0])
@@ -159,19 +150,19 @@ while True:
                 hor_lines.add(line3)
                 hor_lines.add(line4)
 
-                # # Add outer points of the quadrilateral if they haven't been added yet
-                # outer_points = [(int(top_left[0]), int(top_left[1])),
-                #                 (int(top_right[0]), int(top_right[1])),
-                #                 (int(bottom_left[0]), int(bottom_left[1])),
-                #                 (int(bottom_right[0]), int(bottom_right[1])),
-                #                 (int(left_top[0]), int(left_top[1])),
-                #                 (int(left_bottom[0]), int(left_bottom[1])),
-                #                 (int(right_top[0]), int(right_top[1])),
-                #                 (int(right_bottom[0]), int(right_bottom[1]))]
-                #
-                # for p in range(len(outer_points)):
-                #     if outer_points[p] not in intersection_points:
-                #         intersection_points.append(outer_points[p])
+                # Add outer points of the quadrilateral if they haven't been added yet
+                outer_points = [(int(top_left[0]), int(top_left[1])),
+                                (int(top_right[0]), int(top_right[1])),
+                                (int(bottom_left[0]), int(bottom_left[1])),
+                                (int(bottom_right[0]), int(bottom_right[1])),
+                                (int(left_top[0]), int(left_top[1])),
+                                (int(left_bottom[0]), int(left_bottom[1])),
+                                (int(right_top[0]), int(right_top[1])),
+                                (int(right_bottom[0]), int(right_bottom[1]))]
+
+                for outer_point in outer_points:
+                    if outer_point not in intersection_points:
+                        intersection_points.append(outer_point)
 
         for v_line in ver_lines:
             for h_line in hor_lines:
@@ -182,7 +173,8 @@ while True:
                 cv2.line(frame, start_v, end_v, color=(0, 255, 0), thickness=2)
                 cv2.line(frame, start_h, end_h, color=(0, 255, 0), thickness=2)
                 intersection_point = compute_intersection(v_line, h_line)
-                intersection_points.append(intersection_point)
+                if intersection_point not in intersection_points:
+                    intersection_points.append(intersection_point)
 
         # Define the starting blue value
         blue_value = 0
@@ -198,10 +190,9 @@ while True:
             color = (red_value, 0, blue_value)
 
             # Draw the point with the new color
-            cv2.circle(frame, point, radius=10, color=color, thickness=-1)
+            cv2.circle(frame, point, radius=15, color=color, thickness=-1)
 
         print(len(intersection_points))
-
         # roi_colors = []
         #
         # for i in range(len(left_divisions) - 1):
