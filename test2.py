@@ -161,7 +161,8 @@ while True:
                                 (int(right_bottom[0]), int(right_bottom[1]))]
 
                 for outer_point in outer_points:
-                    if outer_point not in intersection_points:
+                    if all(np.linalg.norm(np.array(outer_point) - np.array(point)) > 5 for point in
+                           intersection_points):
                         intersection_points.append(outer_point)
 
         for v_line in ver_lines:
@@ -173,8 +174,12 @@ while True:
                 cv2.line(frame, start_v, end_v, color=(0, 255, 0), thickness=2)
                 cv2.line(frame, start_h, end_h, color=(0, 255, 0), thickness=2)
                 intersection_point = compute_intersection(v_line, h_line)
-                if intersection_point not in intersection_points:
+                if intersection_point is not None and all(
+                        np.linalg.norm(np.array(intersection_point) - np.array(point)) > 5 for point in
+                        intersection_points):
                     intersection_points.append(intersection_point)
+
+        intersection_points_set = set(intersection_points)
 
         # Define the starting blue value
         blue_value = 0
@@ -192,7 +197,6 @@ while True:
             # Draw the point with the new color
             cv2.circle(frame, point, radius=15, color=color, thickness=-1)
 
-        print(len(intersection_points))
         # roi_colors = []
         #
         # for i in range(len(left_divisions) - 1):
