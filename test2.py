@@ -1,6 +1,7 @@
 import cv2
 import numpy as np
 import math
+import time
 
 def compute_intersection(line1, line2):
     x1, y1, x2, y2 = line1
@@ -23,7 +24,11 @@ cap = cv2.VideoCapture(0)
 # Initialize 2D array to store color information of each grid cell
 grid_colors = [['-' for i in range(8)] for j in range(8)]
 
+# Define a variable to keep track of the last time the intersection points were reset
+last_reset_time = time.time()
+
 while True:
+
     # Read a frame from the video capture device
     ret, frame = cap.read()
 
@@ -80,10 +85,10 @@ while True:
 
         top_left, top_right, bottom_right, bottom_left = largest_contour.reshape(4, 2)
 
-        # cv2.circle(frame, (top_left[0], top_left[1]), 20, (255, 0, 0), -1)  # Top left
-        # cv2.circle(frame, (top_right[0], top_right[1]), 20, (255, 0, 0), -1)  # Top Right
-        # cv2.circle(frame, (bottom_right[0], bottom_right[1]), 20, (255, 0, 0), -1)  # Bottom Right
-        # cv2.circle(frame, (bottom_left[0], bottom_left[1]), 20, (255, 0, 0), -1)  # Bottom Left
+        # intersection_points.append((top_left[0], top_left[1]))
+        # intersection_points.append((top_right[0], top_right[1]))
+        # intersection_points.append((bottom_right[0], bottom_right[1]))
+        # intersection_points.append((bottom_left[0], bottom_left[1]))
 
         # define the grid size
         num_segments = 8
@@ -145,15 +150,19 @@ while True:
                 # cv2.line(frame, (int(top_right[0]), int(top_right[1])), (int(bottom_right[0]), int(bottom_right[1])), color=(0, 255, 0),
                 #          thickness=2)
 
-                # Add outer points of the quadrilateral
-                intersection_points.append((int(top_left[0]), int(top_left[1])))
-                intersection_points.append((int(top_right[0]), int(top_right[1])))
-                intersection_points.append((int(bottom_left[0]), int(bottom_left[1])))
-                intersection_points.append((int(bottom_right[0]), int(bottom_right[1])))
-                intersection_points.append((int(left_top[0]), int(left_top[1])))
-                intersection_points.append((int(left_bottom[0]), int(left_bottom[1])))
-                intersection_points.append((int(right_top[0]), int(right_top[1])))
-                intersection_points.append((int(right_bottom[0]), int(right_bottom[1])))
+                # Add outer points of the quadrilateral if they haven't been added yet
+                outer_points = [(int(top_left[0]), int(top_left[1])),
+                                 (int(top_right[0]), int(top_right[1])),
+                                 (int(bottom_left[0]), int(bottom_left[1])),
+                                 (int(bottom_right[0]), int(bottom_right[1])),
+                                 (int(left_top[0]), int(left_top[1])),
+                                 (int(left_bottom[0]), int(left_bottom[1])),
+                                 (int(right_top[0]), int(right_top[1])),
+                                 (int(right_bottom[0]), int(right_bottom[1]))]
+
+                for point in outer_points:
+                    if point not in intersection_points:
+                        intersection_points.append(point)
 
                 # Draw lines connecting opposite sides
                 line1 = (int(left_top[0]), int(left_top[1]), int(right_top[0]), int(right_top[1]))
@@ -165,13 +174,20 @@ while True:
                 for line in [line1, line2, line3, line4]:
                     for other_line in [line1, line2, line3, line4]:
                         if line != other_line:
-                            intersection_point = compute_intersection(line, other_line)
-                            if intersection_point is not None:
-                                intersection_points.append(intersection_point)
+                            point = compute_intersection(line, other_line)
+                            if point is not None and point not in intersection_points and point not in outer_points:
+                                intersection_points.append(point)
 
         # Display intersection points
         for point in intersection_points:
             cv2.circle(frame, point, radius=10, color=(0, 0, 255), thickness=-1)
+
+        print(len(intersection_points))
+
+    # Reset intersection_points every 2 seconds
+    if time.time() - last_reset_time > 2:
+        intersection_points = []
+        last_reset_time = time.time()
 
         # roi_colors = []
         #
