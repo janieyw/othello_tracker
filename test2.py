@@ -146,20 +146,6 @@ while True:
                 # cv2.line(frame, (int(top_right[0]), int(top_right[1])), (int(bottom_right[0]), int(bottom_right[1])), color=(0, 255, 0),
                 #          thickness=2)
 
-                # Add outer points of the quadrilateral if they haven't been added yet
-                outer_points = [(int(top_left[0]), int(top_left[1])),
-                                 (int(top_right[0]), int(top_right[1])),
-                                 (int(bottom_left[0]), int(bottom_left[1])),
-                                 (int(bottom_right[0]), int(bottom_right[1])),
-                                 (int(left_top[0]), int(left_top[1])),
-                                 (int(left_bottom[0]), int(left_bottom[1])),
-                                 (int(right_top[0]), int(right_top[1])),
-                                 (int(right_bottom[0]), int(right_bottom[1]))]
-
-                for point in outer_points:
-                    if point not in intersection_points:
-                        intersection_points.append(point)
-
                 # Draw lines connecting opposite sides
                 line1 = (int(left_top[0]), int(left_top[1]), int(right_top[0]), int(right_top[1]))
                 line2 = (int(left_bottom[0]), int(left_bottom[1]), int(right_bottom[0]), int(right_bottom[1]))
@@ -171,12 +157,42 @@ while True:
                     for other_line in [line1, line2, line3, line4]:
                         if line != other_line:
                             point = compute_intersection(line, other_line)
-                            if point is not None and point not in intersection_points and point not in outer_points:
+                            if point is not None and point not in intersection_points:
                                 intersection_points.append(point)
 
-        # Display intersection points
+                # Add outer points of the quadrilateral if they haven't been added yet
+                outer_points = [(int(top_left[0]), int(top_left[1])),
+                                (int(top_right[0]), int(top_right[1])),
+                                (int(bottom_left[0]), int(bottom_left[1])),
+                                (int(bottom_right[0]), int(bottom_right[1])),
+                                (int(left_top[0]), int(left_top[1])),
+                                (int(left_bottom[0]), int(left_bottom[1])),
+                                (int(right_top[0]), int(right_top[1])),
+                                (int(right_bottom[0]), int(right_bottom[1]))]
+
+                for p in range(len(outer_points)):
+                    if outer_points[p] not in intersection_points:
+                        intersection_points.append(outer_points[p])
+
+        # # Display intersection points
+        # for point in intersection_points:
+        #     cv2.circle(frame, point, radius=10, color=(0, 0, 255), thickness=-1)
+
+        # Define the starting blue value
+        blue_value = 0
+        red_value = 255
+
+        # Display intersection points with increasing blue color
         for point in intersection_points:
-            cv2.circle(frame, point, radius=10, color=(0, 0, 255), thickness=-1)
+            # Increment the blue value by a fixed amount
+            blue_value += 3
+            red_value -= 3
+
+            # Create a color tuple with the new blue value
+            color = (red_value, 0, blue_value)
+
+            # Draw the point with the new color
+            cv2.circle(frame, point, radius=10, color=color, thickness=-1)
 
         print(len(intersection_points))
 
