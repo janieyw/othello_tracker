@@ -1,7 +1,6 @@
 import cv2
 import numpy as np
 import math
-import time
 
 def compute_intersection(line1, line2):
     x1, y1, x2, y2 = line1
@@ -23,9 +22,6 @@ cap = cv2.VideoCapture(0)
 
 # Initialize 2D array to store color information of each grid cell
 grid_colors = [['-' for i in range(8)] for j in range(8)]
-
-# Define a variable to keep track of the last time the intersection points were reset
-last_reset_time = time.time()
 
 while True:
 
@@ -183,11 +179,6 @@ while True:
             cv2.circle(frame, point, radius=10, color=(0, 0, 255), thickness=-1)
 
         print(len(intersection_points))
-
-    # Reset intersection_points every 2 seconds
-    if time.time() - last_reset_time > 2:
-        intersection_points = []
-        last_reset_time = time.time()
 
         # roi_colors = []
         #
