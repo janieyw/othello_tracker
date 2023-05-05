@@ -32,7 +32,7 @@ while True:
     hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
 
     # Define the green, black, and white color ranges to detect
-    green_mask = cv2.inRange(hsv, (40, 60, 60), (80, 255, 255))  # looser range: (36, 25, 25), (86, 255, 255) tighter range: (40, 60, 60), (80, 255, 255)
+    green_mask = cv2.inRange(hsv, (40, 60, 60), (80, 255, 255))  # looser range: (36, 25, 25), (86, 255, 255)
 
     # Apply morphological operations to fill any gaps in the masks
     kernel = np.ones((5, 5), np.uint8)
@@ -43,6 +43,16 @@ while True:
 
     # Sort contours by area in descending order
     contours = sorted(contours, key=lambda x: cv2.contourArea(x), reverse=True)
+
+    # Define the color masks
+    green_mask = cv2.inRange(hsv, (40, 60, 60), (80, 255, 255))
+    black_mask = cv2.inRange(hsv, (0, 0, 0), (180, 255, 50))
+    white_mask = cv2.inRange(hsv, (0, 0, 150), (180, 30, 255))
+
+    # Apply the color masks to the entire frame
+    green_pixels = cv2.bitwise_and(frame, frame, mask=green_mask)
+    black_pixels = cv2.bitwise_and(frame, frame, mask=black_mask)
+    white_pixels = cv2.bitwise_and(frame, frame, mask=white_mask)
 
     # Find the largest contour
     largest_contour = None
@@ -176,7 +186,6 @@ while True:
 
         # Display intersection points with increasing blue color
         for p in range(len(intersection_points)):
-
             if p == 0:
                 radius = 20
             else:
@@ -189,7 +198,9 @@ while True:
             blue_value += 3
             red_value -= 3
 
-        grid_colors = [[0 for x in range(8)] for y in range(8)]
+        # Initialize grid_colors with all '-'
+        grid_colors = [[' ' for _ in range(8)] for _ in range(8)]
+
         if len(intersection_points) == 81:
             # Loop through each row and column to add the four corner points for each cell
             for i in range(GRID_SIZE):
@@ -200,24 +211,7 @@ while True:
                     bottom_right = intersection_points[(i + 1) * 9 + j + 1]
                     grid_cells[i][j] = [top_left, top_right, bottom_left, bottom_right]
 
-            # Loop through each grid cell and draw its quadrilateral
-            for i in range(GRID_SIZE):
-                for j in range(GRID_SIZE):
-                    # Get the four corner points of the grid cell
-                    top_left, top_right, bottom_left, bottom_right = grid_cells[i][j]
-
                     # Draw the quadrilateral
-                    cv2.rectangle(frame, top_left, bottom_right, (0, 255, 0), 2)
-                    # pts = np.array([top_left, top_right, bottom_right, bottom_left], np.int32)
-                    # pts = pts.reshape((-1, 1, 2))
-                    # cv2.polylines(frame, [pts], True, (0, 255, 0), thickness=2)
-
-                    # Define the color masks
-                    green_mask = cv2.inRange(hsv, (40, 60, 60), (80, 255, 255))
-                    black_mask = cv2.inRange(hsv, (0, 0, 0), (180, 255, 50))
-                    white_mask = cv2.inRange(hsv, (0, 0, 150), (180, 30, 255))
-
-                    # Draw a rectangle on the frame
                     cv2.rectangle(frame, top_left, bottom_right, (0, 255, 0), 2)
 
                     # Apply the color masks to the rectangle
@@ -234,22 +228,22 @@ while True:
                                                    mask=white_mask[top_left[1]:bottom_right[1],
                                                         top_left[0]:bottom_right[0]])
 
-                    denominator = (bottom_right[0] - top_left[0]) * (bottom_right[1] - top_left[1])
-                    if denominator == 0:
-                        green_percentage = 0
-                        black_percentage = 0
-                        white_percentage = 0
-                    else:
-                        green_percentage = np.count_nonzero(green_pixels) / denominator
-                        black_percentage = np.count_nonzero(black_pixels) / denominator
-                        white_percentage = np.count_nonzero(white_pixels) / denominator
+                    # Count the number of pixels of each color
+                    green_count = np.count_nonzero(green_pixels)
+                    black_count = np.count_nonzero(black_pixels)
+                    white_count = np.count_nonzero(white_pixels)
 
-                    # Find the color with the highest percentage
-                    max_percentage = max(green_percentage, white_percentage, black_percentage)
-                    if black_percentage == max_percentage:
+                    # Determine the dominant color and assign to grid_color
+                    if black_count > green_count and black_count > white_count:
                         grid_colors[i][j] = '0'
-                    elif white_percentage == max_percentage:
+                        cv2.circle(frame,
+                                   (int((top_left[0] + bottom_right[0]) / 2), int((top_left[1] + bottom_right[1]) / 2)),
+                                   20, (0, 0, 0), -1)
+                    elif white_count > green_count and white_count > black_count:
                         grid_colors[i][j] = '1'
+                        cv2.circle(frame,
+                                   (int((top_left[0] + bottom_right[0]) / 2), int((top_left[1] + bottom_right[1]) / 2)),
+                                   20, (255, 255, 255), -1)
                     else:
                         grid_colors[i][j] = '-'
 

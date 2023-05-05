@@ -187,8 +187,6 @@ while True:
 
         # Display intersection points with increasing blue color
         for point in intersection_points:
-            # Increment the blue value by a fixed amount
-
             # Create a color tuple with the new blue value
             color = (red_value, 0, blue_value)
 
