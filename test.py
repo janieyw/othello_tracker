@@ -20,21 +20,21 @@ def compute_intersection(line1, line2):
 # Set up the video capture device (usually 0 for built-in webcam)
 cap = cv2.VideoCapture(0)
 
-# Initialize 2D array to store color information of each grid cell
-grid_colors = [['-' for i in range(8)] for j in range(8)]
-
 while True:
 
     # Read a frame from the video capture device
     ret, frame = cap.read()
 
+    # Convert frame to grayscale
+    gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+
     # Convert the frame to the HSV color space
     hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
 
     # Define the green, black, and white color ranges to detect
-    green_mask = cv2.inRange(hsv, (40, 60, 60), (80, 255, 255))  # (36, 25, 25), (86, 255, 255)
-    black_mask = cv2.inRange(hsv, (0, 0, 0), (180, 255, 50))
-    white_mask = cv2.inRange(hsv, (0, 0, 150), (180, 30, 255))
+    green_mask = cv2.inRange(hsv, (40, 60, 60), (80, 255, 255))  # looser range: (36, 25, 25), (86, 255, 255) tighter range: (40, 60, 60), (80, 255, 255)
+    black_mask = cv2.inRange(hsv, (0, 0, 0), (180, 255, 50))  # looser: (0, 0, 0), (180, 255, 50) tighter: (0, 0, 0), (180, 50, 50)
+    white_mask = cv2.inRange(hsv, (0, 0, 200), (180, 30, 255))  # looser: (0, 0, 150), (180, 30, 255) tighter: (0, 0, 200), (180, 30, 255)
 
     # Apply morphological operations to fill any gaps in the masks
     kernel = np.ones((5, 5), np.uint8)
@@ -42,21 +42,16 @@ while True:
     black_mask = cv2.morphologyEx(black_mask, cv2.MORPH_CLOSE, kernel)
     white_mask = cv2.morphologyEx(white_mask, cv2.MORPH_CLOSE, kernel)
 
-    # Find contours in the masks
-    green_contours, _ = cv2.findContours(green_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-    black_contours, _ = cv2.findContours(black_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-    white_contours, _ = cv2.findContours(white_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-
-    # Sort contours by area in descending order
-    green_contours = sorted(green_contours, key=lambda x: cv2.contourArea(x), reverse=True)
-    black_contours = sorted(black_contours, key=lambda x: cv2.contourArea(x), reverse=True)
-    white_contours = sorted(white_contours, key=lambda x: cv2.contourArea(x), reverse=True)
-
     # Find contours in the mask
     contours, _ = cv2.findContours(green_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
     # Sort contours by area in descending order
     contours = sorted(contours, key=lambda x: cv2.contourArea(x), reverse=True)
+
+    # Apply the color masks to the entire frame
+    green_pixels = cv2.bitwise_and(frame, frame, mask=green_mask)
+    black_pixels = cv2.bitwise_and(frame, frame, mask=black_mask)
+    white_pixels = cv2.bitwise_and(frame, frame, mask=white_mask)
 
     # Find the largest contour
     largest_contour = None
@@ -68,6 +63,12 @@ while True:
 
     intersection_points = []
 
+    # define the grid size
+    GRID_SIZE = 8
+
+    # Initialize a two-dimensional array to store the corner points of each grid cell
+    grid_cells = [['-' for i in range(8)] for j in range(8)]
+
     # Draw a green outline around the largest contour
     if largest_contour is not None:
         # cv2.drawContours(frame, [largest_contour], 0, (0, 255, 0), 2)
@@ -78,9 +79,6 @@ while True:
         # intersection_points.append((top_right[0], top_right[1]))
         # intersection_points.append((bottom_right[0], bottom_right[1]))
         # intersection_points.append((bottom_left[0], bottom_left[1]))
-
-        # define the grid size
-        num_segments = 8
 
         ver_lines = set()
         hor_lines = set()
@@ -104,10 +102,10 @@ while True:
         left_side_length = np.linalg.norm(np.array(top_left) - np.array(bottom_left))
         left_side_angle = np.arctan2(top_left[1] - bottom_left[1], top_left[0] - bottom_left[0])
 
-        top_divisions = np.linspace(top_left, top_right, num=num_segments + 1, endpoint=True)
-        right_divisions = np.linspace(top_right, bottom_right, num=num_segments + 1, endpoint=True)
-        bottom_divisions = np.linspace(bottom_right, bottom_left, num=num_segments + 1, endpoint=True)
-        left_divisions = np.linspace(bottom_left, top_left, num=num_segments + 1, endpoint=True)
+        top_divisions = np.linspace(top_left, top_right, num=GRID_SIZE + 1, endpoint=True)
+        right_divisions = np.linspace(top_right, bottom_right, num=GRID_SIZE + 1, endpoint=True)
+        bottom_divisions = np.linspace(bottom_right, bottom_left, num=GRID_SIZE + 1, endpoint=True)
+        left_divisions = np.linspace(bottom_left, top_left, num=GRID_SIZE + 1, endpoint=True)
 
         left_divisions_flipped = np.flip(left_divisions, axis=0)
         top_divisions_flipped = np.flip(top_divisions, axis=0)
@@ -115,8 +113,8 @@ while True:
         bottom_divisions_flipped = np.flip(bottom_divisions, axis=0)
 
         # Draw lines connecting corresponding segments on opposite sides
-        for i in range(num_segments):
-            for j in range(num_segments):
+        for i in range(GRID_SIZE):
+            for j in range(GRID_SIZE):
                 top_left = top_divisions_flipped[i, :]
                 top_right = top_divisions_flipped[i + 1, :]
                 bottom_left = bottom_divisions[i, :]
@@ -171,8 +169,8 @@ while True:
                 end_v = (v_line[2], v_line[3])
                 start_h = (h_line[0], h_line[1])
                 end_h = (h_line[2], h_line[3])
-                cv2.line(frame, start_v, end_v, color=(0, 255, 0), thickness=2)
-                cv2.line(frame, start_h, end_h, color=(0, 255, 0), thickness=2)
+                # cv2.line(frame, start_v, end_v, color=(0, 255, 0), thickness=2)
+                # cv2.line(frame, start_h, end_h, color=(0, 255, 0), thickness=2)
                 intersection_point = compute_intersection(v_line, h_line)
                 if intersection_point is not None and all(
                         np.linalg.norm(np.array(intersection_point) - np.array(point)) > 5 for point in
@@ -186,47 +184,75 @@ while True:
         red_value = 255
 
         # Display intersection points with increasing blue color
-        for point in intersection_points:
-            # Create a color tuple with the new blue value
-            color = (red_value, 0, blue_value)
+        for p in range(len(intersection_points)):
+            if p == 0:
+                radius = 20
+            else:
+                radius = 8
 
             # Draw the point with the new color
-            cv2.circle(frame, point, radius=15, color=color, thickness=-1)
+            cv2.circle(frame, intersection_points[p], radius=radius, color=(blue_value, 0, red_value), thickness=-1)
 
+            # Increment and decrement color value by a fixed amount
             blue_value += 3
             red_value -= 3
 
-        # roi_colors = []
-        #
-        # for i in range(len(left_divisions) - 1):
-        #     for j in range(len(top_divisions) - 1):
-        #         x1, y1 = int(j * frame.shape[1] / 8), int(i * frame.shape[0] / 8)
-        #         x2, y2 = int((j + 1) * frame.shape[1] / 8), int((i + 1) * frame.shape[0] / 8)
-        #
-        #         # Apply the color masks to the original image
-        #         green_pixels = cv2.bitwise_and(frame[y1:y2, x1:x2], frame[y1:y2, x1:x2], mask=green_mask[y1:y2, x1:x2])
-        #         black_pixels = cv2.bitwise_and(frame[y1:y2, x1:x2], frame[y1:y2, x1:x2], mask=black_mask[y1:y2, x1:x2])
-        #         white_pixels = cv2.bitwise_and(frame[y1:y2, x1:x2], frame[y1:y2, x1:x2], mask=white_mask[y1:y2, x1:x2])
-        #
-        #         # Calculate the percentage of each color in the cell
-        #         green_percentage = np.count_nonzero(green_pixels) / ((x2 - x1) * (y2 - y1))
-        #         black_percentage = np.count_nonzero(black_pixels) / ((x2 - x1) * (y2 - y1))
-        #         white_percentage = np.count_nonzero(white_pixels) / ((x2 - x1) * (y2 - y1))
-        #
-        #         # Find the color with the highest percentage
-        #         max_percentage = max(green_percentage, white_percentage, black_percentage)
-        #         if green_percentage == max_percentage:
-        #             grid_colors[i][j] = '-'
-        #         elif black_percentage == max_percentage:
-        #             grid_colors[i][j] = 'X'
-        #         else:
-        #             grid_colors[i][j] = 'O'
-        #
-        # # Print out the color information for each grid cell
-        # if cv2.waitKey(1) & 0xFF == ord(' '):
-        #     for row in grid_colors:
-        #         print(' '.join(row))
-        #     print("---------------")
+        # Initialize grid_colors with all '-'
+        grid_colors = [['d' for _ in range(8)] for _ in range(8)]
+
+        if len(intersection_points) == 81:
+            # Loop through each row and column to add the four corner points for each cell
+            for i in range(GRID_SIZE):
+                for j in range(GRID_SIZE):
+                    top_left = intersection_points[i * 9 + j]
+                    top_right = intersection_points[i * 9 + j + 1]
+                    bottom_left = intersection_points[(i + 1) * 9 + j]
+                    bottom_right = intersection_points[(i + 1) * 9 + j + 1]
+                    grid_cells[i][j] = [top_left, top_right, bottom_left, bottom_right]
+
+                    # Draw the quadrilateral
+                    cv2.rectangle(frame, top_left, bottom_right, (0, 255, 0), 2)
+
+                    # Define the masks for the current cell rectangle
+                    cell_rect = np.zeros(frame.shape[:2], dtype=np.uint8)
+                    cell_mask = np.zeros(frame.shape[:2], dtype=np.uint8)
+                    cv2.drawContours(cell_mask, [np.array([top_left, top_right, bottom_right, bottom_left])], 0,
+                                     (255, 255, 255), -1)
+                    cv2.drawContours(cell_rect, [np.array([top_left, top_right, bottom_right, bottom_left])], 0,
+                                     (255, 255, 255), -1)
+                    green_mask_cell = cv2.bitwise_and(green_mask, cell_mask)
+                    black_mask_cell = cv2.bitwise_and(black_mask, cell_mask)
+                    white_mask_cell = cv2.bitwise_and(white_mask, cell_mask)
+
+                    # Apply the color masks to the rectangle
+                    green_pixels = cv2.bitwise_and(frame, frame, mask=green_mask_cell)
+                    black_pixels = cv2.bitwise_and(frame, frame, mask=black_mask_cell)
+                    white_pixels = cv2.bitwise_and(frame, frame, mask=white_mask_cell)
+
+                    # Count the number of pixels of each color
+                    green_count = np.count_nonzero(green_pixels) / 81
+                    black_count = np.count_nonzero(black_pixels)
+                    white_count = np.count_nonzero(white_pixels)
+
+                    # Determine the dominant color
+                    if black_count > green_count and black_count > white_count:
+                        grid_colors[i][j] = '0'
+                        # Draw a filled circle in the center of the cell
+                        center = ((top_left[0] + bottom_right[0]) // 2, (top_left[1] + bottom_right[1]) // 2)
+                        cv2.circle(frame, center, 20, (0, 0, 0), -1)
+                    elif white_count > green_count and white_count > black_count:
+                        grid_colors[i][j] = '1'
+                        # Draw an empty circle in the center of the cell
+                        center = ((top_left[0] + bottom_right[0]) // 2, (top_left[1] + bottom_right[1]) // 2)
+                        cv2.circle(frame, center, 20, (255, 255, 255), 2)
+                    else:
+                        grid_colors[i][j] = '-'
+
+        # Print out the color information for each grid cell
+        if cv2.waitKey(1) & 0xFF == ord(' '):
+            for row in grid_colors:
+                print(' '.join(str(elem) for elem in row))  # print(' '.join(row))
+            print("---------------")
 
     # Display the resulting frame
     cv2.imshow('Othello Tracker', frame)
