@@ -15,6 +15,15 @@ def compute_intersection(line1, line2):
     else:
         return None
 
+def find_largest_contour(contours):
+    largest_contour = None
+    for contour in contours:
+        approx = cv2.approxPolyDP(contour, 0.02 * cv2.arcLength(contour, True), True)
+        if len(approx) == 4:
+            largest_contour = approx
+            break
+    return largest_contour
+
 def display_in_gradient(frame, intersection_points, blue_value, red_value):
     for p in range(len(intersection_points)):
         if p == 0:

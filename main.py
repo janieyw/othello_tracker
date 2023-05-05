@@ -3,7 +3,7 @@ import numpy as np
 import math
 import mediapipe as mp
 from constants import BLACK, WHITE, GREEN, TOTAL_DISK_NUM, GRID_SIZE
-from utils import compute_intersection, display_in_gradient, print_board, print_line_separator, print_p1_score, print_p2_score, print_round_result
+from utils import compute_intersection, find_largest_contour, display_in_gradient, print_board, print_line_separator, print_p1_score, print_p2_score, print_round_result
 
 cap = cv2.VideoCapture(0)  # Use iPhone as webcam
 
@@ -40,12 +40,7 @@ while True:
     white_pixels = cv2.bitwise_and(frame, frame, mask=white_mask)
 
     # Find the largest contour
-    largest_contour = None
-    for contour in contours:
-        approx = cv2.approxPolyDP(contour, 0.02 * cv2.arcLength(contour, True), True)
-        if len(approx) == 4:
-            largest_contour = approx
-            break
+    largest_contour = find_largest_contour(contours)
 
     intersection_points = []
 

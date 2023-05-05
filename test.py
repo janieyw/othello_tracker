@@ -2,70 +2,10 @@ import cv2
 import numpy as np
 import math
 import mediapipe as mp
+from constants import BLACK, WHITE, GREEN, TOTAL_DISK_NUM, GRID_SIZE
+from utils import compute_intersection, find_largest_contour, display_in_gradient, print_board, print_line_separator, print_p1_score, print_p2_score, print_round_result
 
-BLACK = '0'
-WHITE = '1'
-GREEN = '-'
-TOTAL_DISK_NUM = 64
-GRID_SIZE = 8
-
-def compute_intersection(line1, line2):
-    x1, y1, x2, y2 = line1
-    x3, y3, x4, y4 = line2
-    den = (y4 - y3) * (x2 - x1) - (x4 - x3) * (y2 - y1)
-    if den == 0:
-        return None
-    ua = ((x4 - x3) * (y1 - y3) - (y4 - y3) * (x1 - x3)) / den
-    ub = ((x2 - x1) * (y1 - y3) - (y2 - y1) * (x1 - x3)) / den
-    if ua >= 0 and ua <= 1 and ub >= 0 and ub <= 1:
-        x = x1 + ua * (x2 - x1)
-        y = y1 + ua * (y2 - y1)
-        return (int(x), int(y))
-    else:
-        return None
-
-def display_in_gradient(intersection_points, blue_value, red_value):
-    for p in range(len(intersection_points)):
-        if p == 0:
-            radius = 20
-        else:
-            radius = 8
-
-        # Draw the point with the new color
-        cv2.circle(frame, intersection_points[p], radius=radius, color=(blue_value, 0, red_value), thickness=-1)
-
-        # Increment and decrement color value by a fixed amount
-        blue_value += 3
-        red_value -= 3
-
-def print_board(grid_colors):
-    for row in grid_colors:
-        print('  '.join(str(elem) for elem in row))  # print(' '.join(row))
-
-def print_line_separator():
-    print("----------------------")
-
-def print_p1_score(p1_disk_num):
-    print(f"Player 1 score: {p1_disk_num:2d}")
-
-def print_p2_score(p2_disk_num):
-    print(f"Player 2 score: {p2_disk_num:2d}")
-
-def print_round_result(p1_disk_num, p2_disk_num):
-    if p1_disk_num > p2_disk_num:  # p1 winning
-        print(f"Player 1 is winning by {p2_disk_num - p1_disk_num}!")
-    elif p1_disk_num < p2_disk_num:  # p2 winning
-        print(f"Player 2 is winning by {p1_disk_num - p2_disk_num}!")
-    else:  # p1_disk_num == p2_disk_num
-        print(f"Tie!")
-
-mp_hands = mp.solutions.hands
-hands = mp_hands.Hands()
 cap = cv2.VideoCapture(0)  # Use iPhone as webcam
-
-# Set up board positions for each player
-p1_pos = (100, 100) # Set position for player 1's hand
-p2_pos = (500, 500) # Set position for player 2's hand
 
 while True:
     # Read a frame from the video capture device
@@ -100,12 +40,7 @@ while True:
     white_pixels = cv2.bitwise_and(frame, frame, mask=white_mask)
 
     # Find the largest contour
-    largest_contour = None
-    for contour in contours:
-        approx = cv2.approxPolyDP(contour, 0.02 * cv2.arcLength(contour, True), True)
-        if len(approx) == 4:
-            largest_contour = approx
-            break
+    largest_contour = find_largest_contour(contours)
 
     intersection_points = []
 
@@ -223,7 +158,7 @@ while True:
         intersection_points = sorted(intersection_points, key=lambda p: (p[1], p[0]))
 
         # Display intersection points in gradient, while incrementing blue value and decrementing red value
-        display_in_gradient(intersection_points, 0, 255)
+        display_in_gradient(frame, intersection_points, 0, 255)
 
         # Initialize grid_colors with all '-'
         grid_colors = [[GREEN for _ in range(GRID_SIZE)] for _ in range(GRID_SIZE)]
