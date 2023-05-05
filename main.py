@@ -3,6 +3,12 @@ import numpy as np
 import math
 import mediapipe
 
+BLACK = '0'
+WHITE = '1'
+GREEN = '-'
+TOTAL_DISK_NUM = 64
+GRID_SIZE = 8
+
 def compute_intersection(line1, line2):
     x1, y1, x2, y2 = line1
     x3, y3, x4, y4 = line2
@@ -18,11 +24,45 @@ def compute_intersection(line1, line2):
     else:
         return None
 
+def display_in_gradient(intersection_points, blue_value, red_value):
+    for p in range(len(intersection_points)):
+        if p == 0:
+            radius = 20
+        else:
+            radius = 8
+
+        # Draw the point with the new color
+        cv2.circle(frame, intersection_points[p], radius=radius, color=(blue_value, 0, red_value), thickness=-1)
+
+        # Increment and decrement color value by a fixed amount
+        blue_value += 3
+        red_value -= 3
+
+def print_board(grid_colors):
+    for row in grid_colors:
+        print('  '.join(str(elem) for elem in row))  # print(' '.join(row))
+
+def print_line_separator():
+    print("----------------------")
+
+def print_p1_score(p1_disk_num):
+    print(f"Player 1 score: {p1_disk_num:2d}")
+
+def print_p2_score(p2_disk_num):
+    print(f"Player 2 score: {p2_disk_num:2d}")
+
+def print_round_result(p1_disk_num, p2_disk_num):
+    if p1_disk_num > p2_disk_num:  # p1 winning
+        print(f"Player 1 is winning by {p2_disk_num - p1_disk_num}!")
+    elif p1_disk_num < p2_disk_num:  # p2 winning
+        print(f"Player 2 is winning by {p1_disk_num - p2_disk_num}!")
+    else:  # p1_disk_num == p2_disk_num
+        print(f"Tie!")
+
 # Set up the video capture device (usually 0 for built-in webcam)
 cap = cv2.VideoCapture(0)
 
 while True:
-
     # Read a frame from the video capture device
     ret, frame = cap.read()
 
@@ -64,11 +104,8 @@ while True:
 
     intersection_points = []
 
-    # define the grid size
-    GRID_SIZE = 8
-
     # Initialize a two-dimensional array to store the corner points of each grid cell
-    grid_cells = [['-' for i in range(8)] for j in range(8)]
+    grid_cells = [['-' for i in range(GRID_SIZE)] for j in range(GRID_SIZE)]
 
     # Draw a green outline around the largest contour
     if largest_contour is not None:
@@ -180,26 +217,11 @@ while True:
 
         intersection_points = sorted(intersection_points, key=lambda p: (p[1], p[0]))
 
-        # Define the starting blue value
-        blue_value = 0
-        red_value = 255
-
-        # Display intersection points with increasing blue color
-        for p in range(len(intersection_points)):
-            if p == 0:
-                radius = 20
-            else:
-                radius = 8
-
-            # Draw the point with the new color
-            cv2.circle(frame, intersection_points[p], radius=radius, color=(blue_value, 0, red_value), thickness=-1)
-
-            # Increment and decrement color value by a fixed amount
-            blue_value += 3
-            red_value -= 3
+        # Display intersection points in gradient, while incrementing blue value and decrementing red value
+        display_in_gradient(intersection_points, 0, 255)
 
         # Initialize grid_colors with all '-'
-        grid_colors = [['d' for _ in range(8)] for _ in range(8)]
+        grid_colors = [[GREEN for _ in range(GRID_SIZE)] for _ in range(GRID_SIZE)]
 
         if len(intersection_points) == 81:
             # Loop through each row and column to add the four corner points for each cell
@@ -237,44 +259,37 @@ while True:
 
                     # Determine the dominant color
                     if black_count > green_count and black_count > white_count:
-                        grid_colors[i][j] = '0'
+                        grid_colors[i][j] = BLACK
                         # Draw a filled circle in the center of the cell
                         center = ((top_left[0] + bottom_right[0]) // 2, (top_left[1] + bottom_right[1]) // 2)
                         cv2.circle(frame, center, 20, (0, 0, 0), -1)
                     elif white_count > green_count and white_count > black_count:
-                        grid_colors[i][j] = '1'
+                        grid_colors[i][j] = WHITE
                         # Draw an empty circle in the center of the cell
                         center = ((top_left[0] + bottom_right[0]) // 2, (top_left[1] + bottom_right[1]) // 2)
                         cv2.circle(frame, center, 20, (255, 255, 255), 2)
                     else:
-                        grid_colors[i][j] = '-'
+                        grid_colors[i][j] = GREEN
 
         # Initialize p1_disk_num and p2_disk_num to 0
         p1_disk_num = 0
         p2_disk_num = 0
-        TOTAL_DISK_NUM = 64
 
         # Loop through the grid_colors array
         for i in range(GRID_SIZE):
             for j in range(GRID_SIZE):
-                if grid_colors[i][j] == '0':
+                if grid_colors[i][j] == BLACK:
                     p1_disk_num += 1
-                elif grid_colors[i][j] == '1':
+                elif grid_colors[i][j] == WHITE:
                     p2_disk_num += 1
 
         # Print out the color information for each grid cell
         if cv2.waitKey(1) & 0xFF == ord(' '):
-            for row in grid_colors:
-                print('  '.join(str(elem) for elem in row))  # print(' '.join(row))
-            print("----------------------")
-            print(f"Player 1 score: {p1_disk_num:2d}")
-            print(f"Player 2 score: {p2_disk_num:2d}")
-            if p1_disk_num < p2_disk_num:
-                print(f"Player 1 is winning by {p2_disk_num - p1_disk_num}")
-            elif p1_disk_num > p2_disk_num:
-                print(f"Player 2 is winning by {p1_disk_num - p2_disk_num}")
-            else:  # p1_disk_num == p2_disk_num
-                print(f"Tie!")
+            print_board(grid_colors)
+            print_line_separator()
+            print_p1_score(p1_disk_num)
+            print_p2_score(p2_disk_num)
+            print_round_result(p1_disk_num, p2_disk_num)
 
     # Display the resulting frame
     cv2.imshow('Othello Tracker', frame)
