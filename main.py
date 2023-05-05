@@ -1,7 +1,7 @@
 import cv2
 import numpy as np
 import math
-import mediapipe
+import mediapipe as mp
 
 BLACK = '0'
 WHITE = '1'
