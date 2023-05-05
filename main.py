@@ -1,7 +1,6 @@
 import cv2
 import numpy as np
 import math
-import time
 
 def compute_intersection(line1, line2):
     x1, y1, x2, y2 = line1
@@ -34,14 +33,10 @@ while True:
 
     # Define the green, black, and white color ranges to detect
     green_mask = cv2.inRange(hsv, (40, 60, 60), (80, 255, 255))  # looser range: (36, 25, 25), (86, 255, 255) tighter range: (40, 60, 60), (80, 255, 255)
-    black_mask = cv2.inRange(hsv, (0, 0, 0), (180, 255, 50))
-    white_mask = cv2.inRange(hsv, (0, 0, 150), (180, 30, 255))
 
     # Apply morphological operations to fill any gaps in the masks
     kernel = np.ones((5, 5), np.uint8)
     green_mask = cv2.morphologyEx(green_mask, cv2.MORPH_CLOSE, kernel)
-    black_mask = cv2.morphologyEx(black_mask, cv2.MORPH_CLOSE, kernel)
-    white_mask = cv2.morphologyEx(white_mask, cv2.MORPH_CLOSE, kernel)
 
     # Find contours in the mask
     contours, _ = cv2.findContours(green_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
@@ -212,34 +207,42 @@ while True:
                     top_left, top_right, bottom_left, bottom_right = grid_cells[i][j]
 
                     # Draw the quadrilateral
-                    pts = np.array([top_left, top_right, bottom_right, bottom_left], np.int32)
-                    pts = pts.reshape((-1, 1, 2))
-                    cv2.polylines(frame, [pts], True, (0, 255, 0), thickness=2)
+                    cv2.rectangle(frame, top_left, bottom_right, (0, 255, 0), 2)
+                    # pts = np.array([top_left, top_right, bottom_right, bottom_left], np.int32)
+                    # pts = pts.reshape((-1, 1, 2))
+                    # cv2.polylines(frame, [pts], True, (0, 255, 0), thickness=2)
 
-            for i in range(GRID_SIZE):
-                for j in range(GRID_SIZE):
-                    # Get the four corner points of the grid cell
-                    top_left, top_right, bottom_left, bottom_right = grid_cells[i][j]
+                    # Define the color masks
+                    green_mask = cv2.inRange(hsv, (40, 60, 60), (80, 255, 255))
+                    black_mask = cv2.inRange(hsv, (0, 0, 0), (180, 255, 50))
+                    white_mask = cv2.inRange(hsv, (0, 0, 150), (180, 30, 255))
 
-                    x1 = top_left[0]
-                    y1 = top_left[1]
-                    x2 = bottom_right[0]
-                    y2 = bottom_right[1]
+                    # Draw a rectangle on the frame
+                    cv2.rectangle(frame, top_left, bottom_right, (0, 255, 0), 2)
 
-                    # Apply the color masks to the original image
-                    green_pixels = cv2.bitwise_and(frame[y1:y2, x1:x2], frame[y1:y2, x1:x2], mask=green_mask[y1:y2, x1:x2])
-                    black_pixels = cv2.bitwise_and(frame[y1:y2, x1:x2], frame[y1:y2, x1:x2], mask=black_mask[y1:y2, x1:x2])
-                    white_pixels = cv2.bitwise_and(frame[y1:y2, x1:x2], frame[y1:y2, x1:x2], mask=white_mask[y1:y2, x1:x2])
+                    # Apply the color masks to the rectangle
+                    green_pixels = cv2.bitwise_and(frame[top_left[1]:bottom_right[1], top_left[0]:bottom_right[0]],
+                                                   frame[top_left[1]:bottom_right[1], top_left[0]:bottom_right[0]],
+                                                   mask=green_mask[top_left[1]:bottom_right[1],
+                                                        top_left[0]:bottom_right[0]])
+                    black_pixels = cv2.bitwise_and(frame[top_left[1]:bottom_right[1], top_left[0]:bottom_right[0]],
+                                                   frame[top_left[1]:bottom_right[1], top_left[0]:bottom_right[0]],
+                                                   mask=black_mask[top_left[1]:bottom_right[1],
+                                                        top_left[0]:bottom_right[0]])
+                    white_pixels = cv2.bitwise_and(frame[top_left[1]:bottom_right[1], top_left[0]:bottom_right[0]],
+                                                   frame[top_left[1]:bottom_right[1], top_left[0]:bottom_right[0]],
+                                                   mask=white_mask[top_left[1]:bottom_right[1],
+                                                        top_left[0]:bottom_right[0]])
 
-                    area = (x2 - x1) * (y2 - y1)
-                    if area == 0:
+                    denominator = (bottom_right[0] - top_left[0]) * (bottom_right[1] - top_left[1])
+                    if denominator == 0:
                         green_percentage = 0
                         black_percentage = 0
                         white_percentage = 0
                     else:
-                        green_percentage = np.count_nonzero(green_pixels) / area
-                        black_percentage = np.count_nonzero(black_pixels) / area
-                        white_percentage = np.count_nonzero(white_pixels) / area
+                        green_percentage = np.count_nonzero(green_pixels) / denominator
+                        black_percentage = np.count_nonzero(black_pixels) / denominator
+                        white_percentage = np.count_nonzero(white_pixels) / denominator
 
                     # Find the color with the highest percentage
                     max_percentage = max(green_percentage, white_percentage, black_percentage)
@@ -249,12 +252,6 @@ while True:
                         grid_colors[i][j] = '1'
                     else:
                         grid_colors[i][j] = '-'
-
-        # Print out the color information for each grid cell every five seconds
-        if int(time.time()) % 5 == 0:
-            for row in grid_colors:
-                print(' '.join(str(elem) for elem in row))
-            print("---------------")
 
         # Print out the color information for each grid cell
         if cv2.waitKey(1) & 0xFF == ord(' '):
