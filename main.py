@@ -32,22 +32,21 @@ while True:
     hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
 
     # Define the green, black, and white color ranges to detect
-    green_mask = cv2.inRange(hsv, (40, 60, 60), (80, 255, 255))  # looser range: (36, 25, 25), (86, 255, 255)
+    green_mask = cv2.inRange(hsv, (40, 60, 60), (80, 255, 255))  # looser range: (36, 25, 25), (86, 255, 255) tighter range: (40, 60, 60), (80, 255, 255)
+    black_mask = cv2.inRange(hsv, (0, 0, 0), (180, 255, 50))  # looser: (0, 0, 0), (180, 255, 50) tighter: (0, 0, 0), (180, 50, 50)
+    white_mask = cv2.inRange(hsv, (0, 0, 200), (180, 30, 255))  # looser: (0, 0, 150), (180, 30, 255) tighter: (0, 0, 200), (180, 30, 255)
 
     # Apply morphological operations to fill any gaps in the masks
     kernel = np.ones((5, 5), np.uint8)
     green_mask = cv2.morphologyEx(green_mask, cv2.MORPH_CLOSE, kernel)
+    black_mask = cv2.morphologyEx(black_mask, cv2.MORPH_CLOSE, kernel)
+    white_mask = cv2.morphologyEx(white_mask, cv2.MORPH_CLOSE, kernel)
 
     # Find contours in the mask
     contours, _ = cv2.findContours(green_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
     # Sort contours by area in descending order
     contours = sorted(contours, key=lambda x: cv2.contourArea(x), reverse=True)
-
-    # Define the color masks
-    green_mask = cv2.inRange(hsv, (40, 60, 60), (80, 255, 255))
-    black_mask = cv2.inRange(hsv, (0, 0, 0), (180, 255, 50))
-    white_mask = cv2.inRange(hsv, (0, 0, 150), (180, 30, 255))
 
     # Apply the color masks to the entire frame
     green_pixels = cv2.bitwise_and(frame, frame, mask=green_mask)
@@ -199,7 +198,7 @@ while True:
             red_value -= 3
 
         # Initialize grid_colors with all '-'
-        grid_colors = [[' ' for _ in range(8)] for _ in range(8)]
+        grid_colors = [['d' for _ in range(8)] for _ in range(8)]
 
         if len(intersection_points) == 81:
             # Loop through each row and column to add the four corner points for each cell
@@ -214,36 +213,38 @@ while True:
                     # Draw the quadrilateral
                     cv2.rectangle(frame, top_left, bottom_right, (0, 255, 0), 2)
 
+                    # Define the masks for the current cell rectangle
+                    cell_rect = np.zeros(frame.shape[:2], dtype=np.uint8)
+                    cell_mask = np.zeros(frame.shape[:2], dtype=np.uint8)
+                    cv2.drawContours(cell_mask, [np.array([top_left, top_right, bottom_right, bottom_left])], 0,
+                                     (255, 255, 255), -1)
+                    cv2.drawContours(cell_rect, [np.array([top_left, top_right, bottom_right, bottom_left])], 0,
+                                     (255, 255, 255), -1)
+                    green_mask_cell = cv2.bitwise_and(green_mask, cell_mask)
+                    black_mask_cell = cv2.bitwise_and(black_mask, cell_mask)
+                    white_mask_cell = cv2.bitwise_and(white_mask, cell_mask)
+
                     # Apply the color masks to the rectangle
-                    green_pixels = cv2.bitwise_and(frame[top_left[1]:bottom_right[1], top_left[0]:bottom_right[0]],
-                                                   frame[top_left[1]:bottom_right[1], top_left[0]:bottom_right[0]],
-                                                   mask=green_mask[top_left[1]:bottom_right[1],
-                                                        top_left[0]:bottom_right[0]])
-                    black_pixels = cv2.bitwise_and(frame[top_left[1]:bottom_right[1], top_left[0]:bottom_right[0]],
-                                                   frame[top_left[1]:bottom_right[1], top_left[0]:bottom_right[0]],
-                                                   mask=black_mask[top_left[1]:bottom_right[1],
-                                                        top_left[0]:bottom_right[0]])
-                    white_pixels = cv2.bitwise_and(frame[top_left[1]:bottom_right[1], top_left[0]:bottom_right[0]],
-                                                   frame[top_left[1]:bottom_right[1], top_left[0]:bottom_right[0]],
-                                                   mask=white_mask[top_left[1]:bottom_right[1],
-                                                        top_left[0]:bottom_right[0]])
+                    green_pixels = cv2.bitwise_and(frame, frame, mask=green_mask_cell)
+                    black_pixels = cv2.bitwise_and(frame, frame, mask=black_mask_cell)
+                    white_pixels = cv2.bitwise_and(frame, frame, mask=white_mask_cell)
 
                     # Count the number of pixels of each color
-                    green_count = np.count_nonzero(green_pixels)
+                    green_count = np.count_nonzero(green_pixels) / 81
                     black_count = np.count_nonzero(black_pixels)
                     white_count = np.count_nonzero(white_pixels)
 
-                    # Determine the dominant color and assign to grid_color
+                    # Determine the dominant color
                     if black_count > green_count and black_count > white_count:
                         grid_colors[i][j] = '0'
-                        cv2.circle(frame,
-                                   (int((top_left[0] + bottom_right[0]) / 2), int((top_left[1] + bottom_right[1]) / 2)),
-                                   20, (0, 0, 0), -1)
+                        # Draw a filled circle in the center of the cell
+                        center = ((top_left[0] + bottom_right[0]) // 2, (top_left[1] + bottom_right[1]) // 2)
+                        cv2.circle(frame, center, 20, (0, 0, 0), -1)
                     elif white_count > green_count and white_count > black_count:
                         grid_colors[i][j] = '1'
-                        cv2.circle(frame,
-                                   (int((top_left[0] + bottom_right[0]) / 2), int((top_left[1] + bottom_right[1]) / 2)),
-                                   20, (255, 255, 255), -1)
+                        # Draw an empty circle in the center of the cell
+                        center = ((top_left[0] + bottom_right[0]) // 2, (top_left[1] + bottom_right[1]) // 2)
+                        cv2.circle(frame, center, 20, (255, 255, 255), 2)
                     else:
                         grid_colors[i][j] = '-'
 
