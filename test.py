@@ -179,7 +179,7 @@ while True:
                         intersection_points):
                     intersection_points.append(intersection_point)
 
-        intersection_points_set = set(intersection_points)
+        intersection_points = sorted(intersection_points, key=lambda p: (p[1], p[0]))
 
         # Define the starting blue value
         blue_value = 0
@@ -188,14 +188,15 @@ while True:
         # Display intersection points with increasing blue color
         for point in intersection_points:
             # Increment the blue value by a fixed amount
-            blue_value += 3
-            red_value -= 3
 
             # Create a color tuple with the new blue value
             color = (red_value, 0, blue_value)
 
             # Draw the point with the new color
             cv2.circle(frame, point, radius=15, color=color, thickness=-1)
+
+            blue_value += 3
+            red_value -= 3
 
         # roi_colors = []
         #
