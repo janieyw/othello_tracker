@@ -1,6 +1,7 @@
 import cv2
 import numpy as np
 import math
+import mediapipe
 
 def compute_intersection(line1, line2):
     x1, y1, x2, y2 = line1
@@ -248,11 +249,32 @@ while True:
                     else:
                         grid_colors[i][j] = '-'
 
+        # Initialize p1_disk_num and p2_disk_num to 0
+        p1_disk_num = 0
+        p2_disk_num = 0
+        TOTAL_DISK_NUM = 64
+
+        # Loop through the grid_colors array
+        for i in range(GRID_SIZE):
+            for j in range(GRID_SIZE):
+                if grid_colors[i][j] == '0':
+                    p1_disk_num += 1
+                elif grid_colors[i][j] == '1':
+                    p2_disk_num += 1
+
         # Print out the color information for each grid cell
         if cv2.waitKey(1) & 0xFF == ord(' '):
             for row in grid_colors:
-                print(' '.join(str(elem) for elem in row))  # print(' '.join(row))
-            print("---------------")
+                print('  '.join(str(elem) for elem in row))  # print(' '.join(row))
+            print("----------------------")
+            print(f"Player 1 score: {p1_disk_num:2d}")
+            print(f"Player 2 score: {p2_disk_num:2d}")
+            if p1_disk_num < p2_disk_num:
+                print(f"Player 1 is winning by {p2_disk_num - p1_disk_num}")
+            elif p1_disk_num > p2_disk_num:
+                print(f"Player 2 is winning by {p1_disk_num - p2_disk_num}")
+            else:  # p1_disk_num == p2_disk_num
+                print(f"Tie!")
 
     # Display the resulting frame
     cv2.imshow('Othello Tracker', frame)
