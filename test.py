@@ -4,6 +4,7 @@ import math
 import mediapipe as mp
 from constants import BLACK, WHITE, GREEN, TOTAL_DISK_NUM, GRID_SIZE
 from utils import compute_intersection, find_largest_contour, display_in_gradient, print_board, print_line_separator, print_p1_score, print_p2_score, print_round_result
+import hands
 
 cap = cv2.VideoCapture(0)  # Use iPhone as webcam
 
