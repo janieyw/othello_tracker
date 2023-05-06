@@ -3,8 +3,9 @@ import numpy as np
 import math
 import time
 import hands
-from constants import BLACK, WHITE, GREEN, TOTAL_DISK_NUM, GRID_SIZE
-from utils import compute_intersection, find_largest_contour, display_in_gradient, print_board, print_line_separator, print_p1_score, print_p2_score, print_round_result
+from constants import BLACK, WHITE, GREEN, TOTAL_DISK_NUM, GRID_SIZE, TURN_TIME_LIMIT
+from utils import compute_intersection, find_largest_contour, display_in_gradient, print_board, print_line_separator, \
+    print_p1_score, print_p2_score, print_round_result, end_game
 
 # Initialize the player identification object
 player_id = hands.PlayerIdentification()
@@ -23,7 +24,7 @@ while True:
 
     # Draw the current player number on the frame
     player_num = player_id.get_current_player_num()
-    cv2.putText(frame, f"Player {player_num}", (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2, cv2.LINE_AA)
+    cv2.putText(frame, f"Player {player_num}", (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 2, (0, 255, 0), 2, cv2.LINE_AA)
 
     # Identify the current player
     player_id.get_current_player(frame)
@@ -242,6 +243,18 @@ while True:
                     p1_disk_num += 1
                 elif grid_colors[i][j] == WHITE:
                     p2_disk_num += 1
+
+        # Count the number of disks on the board
+        num_disks = p1_disk_num + p2_disk_num
+
+        # End the game if the number of disks on the board has not incremented by 1 after 15 seconds
+        if num_disks == last_disk_count:
+            if time.time() - last_disk_count_time > TURN_TIME_LIMIT:
+                end_game(p1_disk_num, p2_disk_num)
+                break
+        else:
+            last_disk_count = num_disks
+            last_disk_count_time = time.time()
 
         # Print out the color information for each grid cell
         if cv2.waitKey(1) & 0xFF == ord(' '):
