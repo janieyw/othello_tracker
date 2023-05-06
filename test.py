@@ -5,8 +5,8 @@ import player
 import time
 from game import last_play_detected_time, last_hand_detected_time
 from constants import BLACK, WHITE, GREEN, TOTAL_DISK_NUM, GRID_SIZE, TURN_TIME_LIMIT
-from utils import compute_intersection, find_largest_contour, display_in_gradient, display_player_num, print_board, \
-    print_line_separator, update_round_result, print_no_play_message, print_no_hand_message, end_game
+from utils import compute_intersection, find_largest_contour, display_in_gradient, display_player_num
+from talker import print_board, print_line_separator, update_round_result, print_no_play_message, print_no_hand_message, end_game
 
 # Initialize the player identification object
 player_id = player.Player()
