@@ -1,53 +1,13 @@
 import cv2
 import numpy as np
 import math
-import mediapipe as mp
 import time
+import hands
 from constants import BLACK, WHITE, GREEN, TOTAL_DISK_NUM, GRID_SIZE
 from utils import compute_intersection, find_largest_contour, display_in_gradient, print_board, print_line_separator, print_p1_score, print_p2_score, print_round_result
 
-class PlayerIdentification:
-    def __init__(self):
-        self.mp_hands = mp.solutions.hands
-        self.hands = self.mp_hands.Hands()
-        self.current_player = None
-
-    def __del__(self):
-        self.hands.close()
-
-    def get_current_player(self, frame):
-        # Flip the frame horizontally
-        frame = cv2.flip(frame, 1)
-
-        # Convert the color from BGR to RGB
-        frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-
-        # To improve performance, optionally mark the image as not writeable to pass by reference.
-        frame.flags.writeable = False
-
-        # Process the frame with the Mediapipe hand detection model
-        results = self.hands.process(frame)
-
-        # Set the frame to writeable again
-        frame.flags.writeable = True
-
-        if results.multi_hand_landmarks:
-            # Iterate through each detected hand
-            for hand_landmarks in results.multi_hand_landmarks:
-                # Get the x coordinate of the wrist
-                wrist_x = hand_landmarks.landmark[self.mp_hands.HandLandmark.WRIST].x * frame.shape[1]
-
-                # Check if the wrist is on the left side of the frame
-                if wrist_x < frame.shape[1] / 2:
-                    self.current_player = 2
-                else:
-                    self.current_player = 1
-
-    def get_current_player_num(self):
-        return self.current_player
-
 # Initialize the player identification object
-player_id = PlayerIdentification()
+player_id = hands.PlayerIdentification()
 
 last_disk_count = 0  # variable to store the previous count of disks
 last_disk_count_time = time.time()  # variable to store the time of the last count
