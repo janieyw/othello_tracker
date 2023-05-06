@@ -59,6 +59,12 @@ def print_round_result(p1_disk_num, p2_disk_num):
     else:  # p1_disk_num == p2_disk_num
         print(f"Tie!")
 
+def print_timeout_message():
+    print("No play detected for 25 seconds!")
+
+def print_no_hand_message():
+    print("No hand detected for 25 seconds!")
+
 def print_game_result(p1_disk_num, p2_disk_num):
     if p1_disk_num > p2_disk_num:  # p1 winning
         print(f"Player 1 wins by {p2_disk_num - p1_disk_num}!")

@@ -5,13 +5,12 @@ import time
 import hands
 from constants import BLACK, WHITE, GREEN, TOTAL_DISK_NUM, GRID_SIZE, TURN_TIME_LIMIT
 from utils import compute_intersection, find_largest_contour, display_in_gradient, print_board, print_line_separator, \
-    print_p1_score, print_p2_score, print_round_result, end_game
+    print_p1_score, print_p2_score, print_round_result, print_timeout_message, print_no_hand_message, end_game
 
 # Initialize the player identification object
 player_id = hands.PlayerIdentification()
-
-last_disk_count = 0  # variable to store the previous count of disks
-last_disk_count_time = time.time()  # variable to store the time of the last count
+player_num = None
+last_hand_detected_time = time.time()  # variable to store the time of the last hand detection
 
 cap = cv2.VideoCapture(0)  # Use iPhone as webcam
 
@@ -24,7 +23,21 @@ while True:
 
     # Draw the current player number on the frame
     player_num = player_id.get_current_player_num()
-    cv2.putText(frame, f"Player {player_num}", (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 2, (0, 255, 0), 2, cv2.LINE_AA)
+
+    # End the game if no hand has been detected or no disk has been added for 25 seconds
+    if time.time() - last_hand_detected_time > TURN_TIME_LIMIT:
+        # Reset player_num to None
+        player_num = None
+        # Display "no hand detected" message
+        print_timeout_message()
+        # End the game
+        end_game(p1_disk_num, p2_disk_num)
+        break
+
+    # Display the current player number on the frame if player_num is not None
+    if player_num is not None:
+        last_hand_detected_time = time.time()
+        cv2.putText(frame, f"Player {player_num}", (25, 65), cv2.FONT_HERSHEY_DUPLEX, 2, (0, 255, 0), 2, cv2.LINE_AA)
 
     # Identify the current player
     player_id.get_current_player(frame)
@@ -246,15 +259,6 @@ while True:
 
         # Count the number of disks on the board
         num_disks = p1_disk_num + p2_disk_num
-
-        # End the game if the number of disks on the board has not incremented by 1 after 15 seconds
-        if num_disks == last_disk_count:
-            if time.time() - last_disk_count_time > TURN_TIME_LIMIT:
-                end_game(p1_disk_num, p2_disk_num)
-                break
-        else:
-            last_disk_count = num_disks
-            last_disk_count_time = time.time()
 
         # Print out the color information for each grid cell
         if cv2.waitKey(1) & 0xFF == ord(' '):

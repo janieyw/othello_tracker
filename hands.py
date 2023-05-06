@@ -37,6 +37,10 @@ class PlayerIdentification:
                     self.current_player = 2
                 else:
                     self.current_player = 1
+        else:
+            self.current_player = None
+
+        return self.current_player
 
     def get_current_player_num(self):
         return self.current_player
