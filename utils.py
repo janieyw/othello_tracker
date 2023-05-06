@@ -38,6 +38,9 @@ def display_in_gradient(frame, intersection_points, blue_value, red_value):
         blue_value += 3
         red_value -= 3
 
+def display_player_num(frame, player_num):
+    cv2.putText(frame, f"Player {player_num}", (25, 65), cv2.FONT_HERSHEY_DUPLEX, 2, (0, 255, 0), 2, cv2.LINE_AA)
+
 def print_board(grid_colors):
     for row in grid_colors:
         print('  '.join(str(elem) for elem in row))  # print(' '.join(row))
@@ -53,23 +56,23 @@ def print_p2_score(p2_disk_num):
 
 def print_round_result(p1_disk_num, p2_disk_num):
     if p1_disk_num > p2_disk_num:  # p1 winning
-        print(f"Player 1 is winning by {p2_disk_num - p1_disk_num}!")
+        print(f"Player 1 is winning by {p1_disk_num - p2_disk_num}!")
     elif p1_disk_num < p2_disk_num:  # p2 winning
-        print(f"Player 2 is winning by {p1_disk_num - p2_disk_num}!")
+        print(f"Player 2 is winning by {p2_disk_num - p1_disk_num}!")
     else:  # p1_disk_num == p2_disk_num
         print(f"Tie!")
 
-def print_timeout_message():
-    print("No play detected for 25 seconds!")
+def print_no_play_message():
+    print("TIMEOUT: No play detected!")
 
 def print_no_hand_message():
-    print("No hand detected for 25 seconds!")
+    print("TIMEOUT: No hand detected!")
 
 def print_game_result(p1_disk_num, p2_disk_num):
     if p1_disk_num > p2_disk_num:  # p1 winning
-        print(f"Player 1 wins by {p2_disk_num - p1_disk_num}!")
+        print(f"Player 1 wins by {p1_disk_num - p2_disk_num}!")
     elif p1_disk_num < p2_disk_num:  # p2 winning
-        print(f"Player 2 wins by {p1_disk_num - p2_disk_num}!")
+        print(f"Player 2 is winning by {p2_disk_num - p1_disk_num}!")
     else:  # p1_disk_num == p2_disk_num
         print(f"Tie!")
 
