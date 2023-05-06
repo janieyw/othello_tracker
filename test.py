@@ -1,17 +1,16 @@
 import cv2
 import numpy as np
 import math
+import player
 import time
-import hands
+from game import last_play_detected_time, last_hand_detected_time
 from constants import BLACK, WHITE, GREEN, TOTAL_DISK_NUM, GRID_SIZE, TURN_TIME_LIMIT
 from utils import compute_intersection, find_largest_contour, display_in_gradient, display_player_num, print_board, \
-    print_line_separator, print_p1_score, print_p2_score, print_round_result, print_no_play_message, print_no_hand_message, end_game
+    print_line_separator, update_round_result, print_no_play_message, print_no_hand_message, end_game
 
 # Initialize the player identification object
-player_id = hands.PlayerIdentification()
+player_id = player.Player()
 player_num = None
-last_play_detected_time = time.time()  # variable to store the time of the last play detection
-last_hand_detected_time = time.time()  # variable to store the time of the last hand detection
 player_num_stack = []
 
 # Initialize all disk numbers to 0, except for prev_disk_num
@@ -287,9 +286,7 @@ while True:
         if cv2.waitKey(1) & 0xFF == ord(' '):
             print_board(grid_colors)
             print_line_separator()
-            print_p1_score(p1_disk_num)
-            print_p2_score(p2_disk_num)
-            print_round_result(p1_disk_num, p2_disk_num)
+            update_round_result(p1_disk_num, p2_disk_num)
             print_line_separator()
 
     # Display the resulting frame

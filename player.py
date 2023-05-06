@@ -1,7 +1,7 @@
 import cv2
 import mediapipe as mp
 
-class PlayerIdentification:
+class Player:
     def __init__(self):
         self.mp_hands = mp.solutions.hands
         self.hands = self.mp_hands.Hands()
