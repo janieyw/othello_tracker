@@ -42,6 +42,8 @@ def print_bye_message():
     print_line_separator()
     print("     End of Game!")
 
-def end_game(p1_disk_num, p2_disk_num):
+def announce_game_end(p1_disk_num, p2_disk_num):
+    print_p1_score(p1_disk_num)
+    print_p2_score(p2_disk_num)
     print_game_result(p1_disk_num, p2_disk_num)
     print_bye_message()

@@ -6,7 +6,7 @@ import time
 from game import last_play_detected_time, last_hand_detected_time
 from constants import BLACK, WHITE, GREEN, TOTAL_DISK_NUM, GRID_SIZE, TURN_TIME_LIMIT
 from utils import compute_intersection, find_largest_contour, display_in_gradient, display_player_num
-from talker import print_board, print_line_separator, update_round_result, print_no_play_message, print_no_hand_message, end_game
+from talker import print_board, print_line_separator, update_round_result, print_no_play_message, print_no_hand_message, announce_game_end
 
 # Initialize the player identification object
 player_id = player.Player()
@@ -18,6 +18,9 @@ p1_disk_num = 0
 p2_disk_num = 0
 disk_num = 0
 prev_disk_num = -1
+
+# Initialize grid_colors with all '-'
+grid_colors = [[GREEN for _ in range(GRID_SIZE)] for _ in range(GRID_SIZE)]
 
 cap = cv2.VideoCapture(0)  # Use iPhone as webcam
 
@@ -37,25 +40,6 @@ while True:
     # rest player disk nums
     p1_disk_num = 0
     p2_disk_num = 0
-
-    # End the game if no hand has been detected or no disk has been added for 25 seconds
-    if time.time() - last_hand_detected_time > TURN_TIME_LIMIT:
-        player_num = None
-        print_no_hand_message()
-        end_game(p1_disk_num, p2_disk_num)
-        break
-
-    # End the game if no disk has been added for 25 seconds
-    if total_disk_num == prev_disk_num and time.time() - last_play_detected_time > TURN_TIME_LIMIT:
-        player_num = None
-        print_no_play_message()
-        end_game(p1_disk_num, p2_disk_num)
-        break
-
-    # Display the current player number on the frame if player_num is not None
-    if player_num is not None:
-        last_hand_detected_time = time.time()
-        display_player_num(frame, player_num)
 
     # # Check if the next player number matches the topmost element of the stack
     # if player_num is not None and player_num == player_num_stack[-1]:
@@ -220,9 +204,6 @@ while True:
         # Display intersection points in gradient, while incrementing blue value and decrementing red value
         display_in_gradient(frame, intersection_points, 0, 255)
 
-        # Initialize grid_colors with all '-'
-        grid_colors = [[GREEN for _ in range(GRID_SIZE)] for _ in range(GRID_SIZE)]
-
         if len(intersection_points) == 81:
             # Loop through each row and column to add the four corner points for each cell
             for i in range(GRID_SIZE):
@@ -282,6 +263,31 @@ while True:
         # Update the prev_disk_num variable
         prev_disk_num = total_disk_num
 
+        # End the game if no hand has been detected or no disk has been added for 25 seconds
+        if time.time() - last_hand_detected_time > TURN_TIME_LIMIT:
+            player_num = None
+            print_no_hand_message()
+            print_line_separator()
+            print_board(grid_colors)
+            print_line_separator()
+            announce_game_end(p1_disk_num, p2_disk_num)
+            break
+
+        # End the game if no disk has been added for 25 seconds
+        if total_disk_num == prev_disk_num and time.time() - last_play_detected_time > TURN_TIME_LIMIT:
+            player_num = None
+            print_no_play_message()
+            print_line_separator()
+            print_board(grid_colors)
+            print_line_separator()
+            announce_game_end(p1_disk_num, p2_disk_num)
+            break
+
+        # Display the current player number on the frame if player_num is not None
+        if player_num is not None:
+            last_hand_detected_time = time.time()
+            display_player_num(frame, player_num)
+
         # Print out the color information for each grid cell
         if cv2.waitKey(1) & 0xFF == ord(' '):
             print_board(grid_colors)
@@ -294,6 +300,7 @@ while True:
 
     # Check for 'q' key press to exit
     if cv2.waitKey(1) & 0xFF == ord('q'):
+        announce_game_end(p1_disk_num, p2_disk_num)
         break
 
 cap.release()

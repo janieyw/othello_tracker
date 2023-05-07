@@ -1,5 +1,3 @@
-import numpy as np
-
 BLACK = '0'
 WHITE = '1'
 GREEN = '-'
