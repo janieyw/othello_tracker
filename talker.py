@@ -13,7 +13,7 @@ def print_p2_score(p2_disk_num):
 
 def print_round_result(p1_disk_num, p2_disk_num):
     if p1_disk_num > p2_disk_num:  # p1 winning
-        print(f"Player 1 is winning by {p1_disk_num - p2_disk_num}!")
+        print(f"Player 1 leads by {p1_disk_num - p2_disk_num}!")
     elif p1_disk_num < p2_disk_num:  # p2 winning
         print(f"Player 2 leads by {p2_disk_num - p1_disk_num}!")
     else:  # p1_disk_num == p2_disk_num
@@ -34,7 +34,7 @@ def print_game_result(p1_disk_num, p2_disk_num):
     if p1_disk_num > p2_disk_num:  # p1 winning
         print(f"Player 1 wins by {p1_disk_num - p2_disk_num}!")
     elif p1_disk_num < p2_disk_num:  # p2 winning
-        print(f"Player 2 leads by {p2_disk_num - p1_disk_num}!")
+        print(f"Player 2 wins by {p2_disk_num - p1_disk_num}!")
     else:  # p1_disk_num == p2_disk_num
         print(f"Tie!")
 

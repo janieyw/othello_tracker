@@ -260,10 +260,7 @@ while True:
                 elif grid_colors[i][j] == WHITE:
                     p2_disk_num += 1
 
-        # Update the prev_disk_num variable
-        prev_disk_num = total_disk_num
-
-        # End the game if no hand has been detected or no disk has been added for 25 seconds
+        # End the game if no hand has been detected or no disk has been added for 30 seconds
         if time.time() - last_hand_detected_time > TURN_TIME_LIMIT:
             player_num = None
             print_no_hand_message()
@@ -273,7 +270,7 @@ while True:
             announce_game_end(p1_disk_num, p2_disk_num)
             break
 
-        # End the game if no disk has been added for 25 seconds
+        # End the game if no disk has been added for 30 seconds
         if total_disk_num == prev_disk_num and time.time() - last_play_detected_time > TURN_TIME_LIMIT:
             player_num = None
             print_no_play_message()
@@ -294,6 +291,9 @@ while True:
             print_line_separator()
             update_round_result(p1_disk_num, p2_disk_num)
             print_line_separator()
+
+        # Update the prev_disk_num variable
+        prev_disk_num = total_disk_num
 
     # Display the resulting frame
     cv2.imshow('Othello Tracker', frame)
