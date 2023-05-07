@@ -68,6 +68,9 @@ def display_in_gradient(frame, intersection_points, blue_value, red_value):
         blue_value += 3
         red_value -= 3
 
+def reset_player_disk_num():
+    return 0, 0
+
 def display_player_num(frame, player_num):
     cv2.putText(frame, f"Player {player_num}", (25, 65), cv2.FONT_HERSHEY_DUPLEX, 2, (0, 255, 0), 2, cv2.LINE_AA)
 

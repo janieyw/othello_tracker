@@ -1,5 +1,3 @@
-import cv2
-import numpy as np
 import math
 import player
 import time
@@ -37,9 +35,7 @@ while True:
     # Draw the current player number on the frame
     player_num = player.get_current_player_num()
 
-    # rest player disk nums
-    p1_disk_num = 0
-    p2_disk_num = 0
+    p1_disk_num, p2_disk_num = reset_player_disk_num()
 
     # # Check if the next player number matches the topmost element of the stack
     # if player_num is not None and player_num == player_num_stack[-1]:
@@ -54,9 +50,6 @@ while True:
 
     # Identify the current player
     player.get_current_player(frame)
-
-    # Convert frame to grayscale
-    gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 
     # Convert the frame to the HSV color space
     hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
