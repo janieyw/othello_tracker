@@ -9,7 +9,7 @@ from utils import compute_intersection, find_largest_contour, display_in_gradien
 from talker import print_board, print_line_separator, update_round_result, print_no_play_message, print_no_hand_message, announce_game_end
 
 # Initialize the player identification object
-player_id = player.Player()
+player = player.Player()
 player_num = None
 player_num_stack = []
 
@@ -32,10 +32,10 @@ while True:
     total_disk_num = p1_disk_num + p2_disk_num
 
     # Identify the current player
-    player_id.get_current_player(frame)
+    player.get_current_player(frame)
 
     # Draw the current player number on the frame
-    player_num = player_id.get_current_player_num()
+    player_num = player.get_current_player_num()
 
     # rest player disk nums
     p1_disk_num = 0
@@ -53,7 +53,7 @@ while True:
     # player_num_stack.append(player_num)
 
     # Identify the current player
-    player_id.get_current_player(frame)
+    player.get_current_player(frame)
 
     # Convert frame to grayscale
     gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
