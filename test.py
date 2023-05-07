@@ -5,8 +5,9 @@ import player
 import time
 from game import last_play_detected_time, last_hand_detected_time
 from constants import BLACK, WHITE, GREEN, TOTAL_DISK_NUM, GRID_SIZE, TURN_TIME_LIMIT
-from utils import compute_intersection, find_largest_contour, display_in_gradient, display_player_num
-from talker import print_board, print_line_separator, update_round_result, print_no_play_message, print_no_hand_message, announce_game_end
+from utils import *
+from talker import print_board, print_line_separator, update_round_result, announce_no_hand_game_end, \
+    announce_no_play_game_end, announce_game_end
 
 # Initialize the player identification object
 player = player.Player()
@@ -14,8 +15,7 @@ player_num = None
 player_num_stack = []
 
 # Initialize all disk numbers to 0, except for prev_disk_num
-p1_disk_num = 0
-p2_disk_num = 0
+p1_disk_num, p2_disk_num = 0, 0
 disk_num = 0
 prev_disk_num = -1
 
@@ -61,27 +61,17 @@ while True:
     # Convert the frame to the HSV color space
     hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
 
-    # Define the green, black, and white color ranges to detect
-    green_mask = cv2.inRange(hsv, (40, 60, 60), (80, 255, 255))  # looser: (36, 25, 25), (86, 255, 255) tighter: (40, 60, 60), (80, 255, 255)
-    black_mask = cv2.inRange(hsv, (0, 0, 0), (180, 255, 50))  # looser: (0, 0, 0), (180, 255, 50) tighter: (0, 0, 0), (180, 50, 50)
-    white_mask = cv2.inRange(hsv, (0, 0, 200), (180, 30, 255))  # looser: (0, 0, 150), (180, 30, 255) tighter: (0, 0, 200), (180, 30, 255)
-
     # Apply morphological operations to fill any gaps in the masks
     kernel = np.ones((5, 5), np.uint8)
-    green_mask = cv2.morphologyEx(green_mask, cv2.MORPH_CLOSE, kernel)
-    black_mask = cv2.morphologyEx(black_mask, cv2.MORPH_CLOSE, kernel)
-    white_mask = cv2.morphologyEx(white_mask, cv2.MORPH_CLOSE, kernel)
+    green_mask = get_green_mask(hsv, kernel)
+    black_mask = get_black_mask(hsv, kernel)
+    white_mask = get_white_mask(hsv, kernel)
 
     # Find contours in the mask
     contours, _ = cv2.findContours(green_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
     # Sort contours by area in descending order
     contours = sorted(contours, key=lambda x: cv2.contourArea(x), reverse=True)
-
-    # Apply the color masks to the entire frame
-    green_pixels = cv2.bitwise_and(frame, frame, mask=green_mask)
-    black_pixels = cv2.bitwise_and(frame, frame, mask=black_mask)
-    white_pixels = cv2.bitwise_and(frame, frame, mask=white_mask)
 
     # Find the largest contour
     largest_contour = find_largest_contour(contours)
@@ -160,15 +150,13 @@ while True:
                 #          thickness=2)
 
                 # Draw lines connecting opposite sides
-                line1 = (int(left_top[0]), int(left_top[1]), int(right_top[0]), int(right_top[1]))
-                line2 = (int(left_bottom[0]), int(left_bottom[1]), int(right_bottom[0]), int(right_bottom[1]))
-                line3 = (int(top_left[0]), int(top_left[1]), int(bottom_left[0]), int(bottom_left[1]))
-                line4 = (int(top_right[0]), int(top_right[1]), int(bottom_right[0]), int(bottom_right[1]))
+                ver_line1 = (int(left_top[0]), int(left_top[1]), int(right_top[0]), int(right_top[1]))
+                ver_line2 = (int(left_bottom[0]), int(left_bottom[1]), int(right_bottom[0]), int(right_bottom[1]))
+                hor_line1 = (int(top_left[0]), int(top_left[1]), int(bottom_left[0]), int(bottom_left[1]))
+                hor_line2 = (int(top_right[0]), int(top_right[1]), int(bottom_right[0]), int(bottom_right[1]))
 
-                ver_lines.add(line1)
-                ver_lines.add(line2)
-                hor_lines.add(line3)
-                hor_lines.add(line4)
+                ver_lines.update([ver_line1, ver_line2])
+                hor_lines.update([hor_line1, hor_line2])
 
                 # Add outer points of the quadrilateral if they haven't been added yet
                 outer_points = [(int(top_left[0]), int(top_left[1])),
@@ -208,49 +196,32 @@ while True:
             # Loop through each row and column to add the four corner points for each cell
             for i in range(GRID_SIZE):
                 for j in range(GRID_SIZE):
-                    top_left = intersection_points[i * 9 + j]
-                    top_right = intersection_points[i * 9 + j + 1]
-                    bottom_left = intersection_points[(i + 1) * 9 + j]
-                    bottom_right = intersection_points[(i + 1) * 9 + j + 1]
+                    top_left, top_right, bottom_left, bottom_right = define_corner_points(intersection_points, i, j)
                     grid_cells[i][j] = [top_left, top_right, bottom_left, bottom_right]
 
                     # Draw the quadrilateral
-                    cv2.rectangle(frame, top_left, bottom_right, (0, 255, 0), 2)
+                    draw_quadrilateral(frame, top_left, bottom_right)
 
                     # Define the masks for the current cell rectangle
                     cell_rect = np.zeros(frame.shape[:2], dtype=np.uint8)
+                    # Create binary masks for the current cell rectangle
                     cell_mask = np.zeros(frame.shape[:2], dtype=np.uint8)
+                    # Draw the contours of the current cell onto the cell_mask and cell_rect
                     cv2.drawContours(cell_mask, [np.array([top_left, top_right, bottom_right, bottom_left])], 0,
                                      (255, 255, 255), -1)
                     cv2.drawContours(cell_rect, [np.array([top_left, top_right, bottom_right, bottom_left])], 0,
                                      (255, 255, 255), -1)
+                    # Apply the masks to the color masks
                     green_mask_cell = cv2.bitwise_and(green_mask, cell_mask)
                     black_mask_cell = cv2.bitwise_and(black_mask, cell_mask)
                     white_mask_cell = cv2.bitwise_and(white_mask, cell_mask)
 
-                    # Apply the color masks to the rectangle
-                    green_pixels = cv2.bitwise_and(frame, frame, mask=green_mask_cell)
-                    black_pixels = cv2.bitwise_and(frame, frame, mask=black_mask_cell)
-                    white_pixels = cv2.bitwise_and(frame, frame, mask=white_mask_cell)
-
-                    # Count the number of pixels of each color
-                    green_count = np.count_nonzero(green_pixels) / 81
-                    black_count = np.count_nonzero(black_pixels)
-                    white_count = np.count_nonzero(white_pixels)
-
                     # Determine the dominant color
-                    if black_count > green_count and black_count > white_count:
-                        grid_colors[i][j] = BLACK
-                        # Draw a filled circle in the center of the cell
-                        center = ((top_left[0] + bottom_right[0]) // 2, (top_left[1] + bottom_right[1]) // 2)
-                        cv2.circle(frame, center, 20, (0, 0, 0), -1)
-                    elif white_count > green_count and white_count > black_count:
-                        grid_colors[i][j] = WHITE
-                        # Draw an empty circle in the center of the cell
-                        center = ((top_left[0] + bottom_right[0]) // 2, (top_left[1] + bottom_right[1]) // 2)
-                        cv2.circle(frame, center, 20, (255, 255, 255), 2)
-                    else:
-                        grid_colors[i][j] = GREEN
+                    color = determine_dominant_color(frame, green_mask_cell, black_mask_cell, white_mask_cell)
+
+                    grid_colors[i][j] = color
+
+                    draw_disk(frame, color, top_left, bottom_right)
 
         # Loop through the grid_colors array
         for i in range(GRID_SIZE):
@@ -263,21 +234,13 @@ while True:
         # End the game if no hand has been detected or no disk has been added for 30 seconds
         if time.time() - last_hand_detected_time > TURN_TIME_LIMIT:
             player_num = None
-            print_no_hand_message()
-            print_line_separator()
-            print_board(grid_colors)
-            print_line_separator()
-            announce_game_end(p1_disk_num, p2_disk_num)
+            announce_no_hand_game_end(grid_colors, p1_disk_num, p2_disk_num)
             break
 
         # End the game if no disk has been added for 30 seconds
         if total_disk_num == prev_disk_num and time.time() - last_play_detected_time > TURN_TIME_LIMIT:
             player_num = None
-            print_no_play_message()
-            print_line_separator()
-            print_board(grid_colors)
-            print_line_separator()
-            announce_game_end(p1_disk_num, p2_disk_num)
+            announce_no_play_game_end(grid_colors, p1_disk_num, p2_disk_num)
             break
 
         # Display the current player number on the frame if player_num is not None
