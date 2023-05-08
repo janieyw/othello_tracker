@@ -68,6 +68,10 @@ def display_in_gradient(frame, intersection_points, blue_value, red_value):
         blue_value += 3
         red_value -= 3
 
+def display_grid_lines(frame, start_v, end_v, start_h, end_h):
+    cv2.line(frame, start_v, end_v, color=(0, 255, 0), thickness=2)
+    cv2.line(frame, start_h, end_h, color=(0, 255, 0), thickness=2)
+
 def reset_player_disk_num():
     return 0, 0
 

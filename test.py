@@ -2,7 +2,7 @@ import math
 import player
 import time
 from game import last_play_detected_time, last_hand_detected_time
-from constants import BLACK, WHITE, GREEN, TOTAL_DISK_NUM, GRID_SIZE, TURN_TIME_LIMIT
+from constants import BLACK, WHITE, GREEN, TOTAL_DISK_NUM, GRID_SIZE, TIME_LIMIT
 from utils import *
 from talker import print_board, print_line_separator, update_round_result, announce_no_hand_game_end, \
     announce_no_play_game_end, announce_game_end
@@ -225,16 +225,16 @@ while True:
                     p2_disk_num += 1
 
         # End the game if no hand has been detected or no disk has been added for 30 seconds
-        if time.time() - last_hand_detected_time > TURN_TIME_LIMIT:
+        if time.time() - last_hand_detected_time > TIME_LIMIT:
             player_num = None
             announce_no_hand_game_end(grid_colors, p1_disk_num, p2_disk_num)
             break
 
-        # End the game if no disk has been added for 30 seconds
-        if total_disk_num == prev_disk_num and time.time() - last_play_detected_time > TURN_TIME_LIMIT:
-            player_num = None
-            announce_no_play_game_end(grid_colors, p1_disk_num, p2_disk_num)
-            break
+        # # End the game if no disk has been added for 30 seconds
+        # if total_disk_num == prev_disk_num and time.time() - last_play_detected_time > TIME_LIMIT:
+        #     player_num = None
+        #     announce_no_play_game_end(grid_colors, p1_disk_num, p2_disk_num)
+        #     break
 
         # Display the current player number on the frame if player_num is not None
         if player_num is not None:
