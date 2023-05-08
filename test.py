@@ -84,7 +84,6 @@ while True:
 
                     # Define the masks for the current cell rectangle
                     cell_rect = np.zeros(frame.shape[:2], dtype=np.uint8)
-                    # Create binary masks for the current cell rectangle
                     cell_mask = np.zeros(frame.shape[:2], dtype=np.uint8)
                     # Draw the contours of the current cell onto the cell_mask and cell_rect
                     cv2.drawContours(cell_mask, [np.array([top_left, top_right, bottom_right, bottom_left])], 0,
@@ -92,7 +91,6 @@ while True:
                     cv2.drawContours(cell_rect, [np.array([top_left, top_right, bottom_right, bottom_left])], 0,
                                      (255, 255, 255), -1)
 
-                    # Determine the dominant color
                     color = determine_dominant_color(frame, cell_mask, green_mask, black_mask, white_mask)
                     grid_colors[i][j] = color
 
