@@ -1,5 +1,6 @@
 import cv2
 import mediapipe as mp
+import numpy as np
 
 class Player:
     def __init__(self):
@@ -27,16 +28,30 @@ class Player:
         frame.flags.writeable = True
 
         if results.multi_hand_landmarks:
+            # Initialize a list of hand coordinates
+            hand_coords = []
+
             # Iterate through each detected hand
             for hand_landmarks in results.multi_hand_landmarks:
-                # Get the x coordinate of the wrist
+                # Get the x and y coordinates of the wrist
                 wrist_x = hand_landmarks.landmark[self.mp_hands.HandLandmark.WRIST].x * frame.shape[1]
+                wrist_y = hand_landmarks.landmark[self.mp_hands.HandLandmark.WRIST].y * frame.shape[0]
 
-                # Check if the wrist is on the left side of the frame
-                if wrist_x < frame.shape[1] / 2:
-                    self.current_player = 2
-                else:
-                    self.current_player = 1
+                # Append the hand coordinates to the list
+                hand_coords.append((wrist_x, wrist_y))
+
+            # Determine which hand is closest to the center of the frame
+            center_x = frame.shape[1] / 2
+            center_y = frame.shape[0] / 2
+            distances = [np.sqrt((x - center_x)**2 + (y - center_y)**2) for x, y in hand_coords]
+            closest_hand_index = np.argmin(distances)
+
+            # Determine the player number based on the closest hand
+            closest_hand_x, closest_hand_y = hand_coords[closest_hand_index]
+            if closest_hand_x < center_x:
+                self.current_player = 2
+            else:
+                self.current_player = 1
         else:
             self.current_player = None
 

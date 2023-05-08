@@ -181,3 +181,8 @@ def divide_side_into_segments(point1, point2, num_segments):
 
 def flip_divisions(divisions):
     return np.flip(divisions, axis=0)
+
+def get_frame_center(frame):
+    height, width = frame.shape[:2]
+    center_x, center_y = int(width/2), int(height/2)
+    return (center_x, center_y)
