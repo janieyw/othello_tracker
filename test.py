@@ -11,6 +11,7 @@ player = player.Player()
 # Initialize all disk numbers to 0, except for prev_disk_num
 p1_disk_num, p2_disk_num, total_disk_num = 0, 0, 0
 prev_disk_num = -1
+prev_player_num = None
 
 # Initialize grid_colors with all '-'
 grid_colors = [[GREEN for _ in range(GRID_SIZE)] for _ in range(GRID_SIZE)]
@@ -47,6 +48,14 @@ while True:
 
         # Identify the current player
         player_num = player.get_current_player_num(frame)
+
+        # Check if player_num is the same as prev_player_num, and print "wrong player!" if so
+        if player_num == prev_player_num:
+            right_player_num = player.get_right_player_num(prev_player_num)
+            print_wrong_player_warning(right_player_num)
+
+        # Update prev_player_num to current player_num
+        prev_player_num = player_num
 
         # Calculate the angles and lengths of the sides
         top_side_length, top_side_angle = calculate_side_properties(top_left, top_right)
@@ -116,7 +125,6 @@ while True:
         #     announce_no_play_game_end(grid_colors, p1_disk_num, p2_disk_num)
         #     break
 
-        print(player_num)
         # Display the current player number on the frame if player_num is not None
         if player_num is not None:
             last_hand_detected_time = time.time()

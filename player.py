@@ -56,3 +56,12 @@ class Player:
             self.current_player = None
 
         return self.current_player
+
+    def get_right_player_num(self, prev_player_num):
+        if prev_player_num == None:
+            right_player_num = 1
+        elif prev_player_num == 1:
+            right_player_num = 2
+        else:  # prev_player_num == 2
+            right_player_num = 1
+        return right_player_num
