@@ -4,8 +4,7 @@ import time
 from game import last_play_detected_time, last_hand_detected_time
 from constants import BLACK, WHITE, GREEN, TOTAL_DISK_NUM, GRID_SIZE, TIME_LIMIT
 from utils import *
-from talker import print_board, print_line_separator, update_round_result, announce_no_hand_game_end, \
-    announce_no_play_game_end, announce_game_end
+from talker import *
 
 # Initialize the player identification object
 player = player.Player()
@@ -34,15 +33,10 @@ while True:
 
     # Apply morphological operations to fill any gaps in the masks
     kernel = np.ones((5, 5), np.uint8)
-    green_mask = get_green_mask(hsv, kernel)
-    black_mask = get_black_mask(hsv, kernel)
-    white_mask = get_white_mask(hsv, kernel)
+    green_mask, black_mask, white_mask = get_color_masks(hsv, kernel)
 
     # Find contours in the mask
     contours, _ = cv2.findContours(green_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-
-    # Sort contours by area in descending order
-    contours = sorted(contours, key=lambda x: cv2.contourArea(x), reverse=True)
 
     # Find the largest contour
     largest_contour = find_largest_contour(contours)
@@ -101,27 +95,10 @@ while True:
         # Draw lines connecting corresponding segments on opposite sides
         for i in range(GRID_SIZE):
             for j in range(GRID_SIZE):
-                top_left = top_divisions_flipped[i, :]
-                top_right = top_divisions_flipped[i + 1, :]
-                bottom_left = bottom_divisions[i, :]
-                bottom_right = bottom_divisions[i + 1, :]
-                left_top = left_divisions_flipped[j, :]
-                left_bottom = left_divisions_flipped[j + 1, :]
-                right_top = right_divisions[j, :]
-                right_bottom = right_divisions[j + 1, :]
-
-                # Draw smaller quadrilateral
-                points = np.array([top_left, top_right, bottom_right, bottom_left])
-
-                # # Draw lines connecting opposite sides
-                # cv2.line(frame, (int(left_top[0]), int(left_top[1])), (int(right_top[0]), int(right_top[1])), color=(0, 255, 0),
-                #          thickness=2)
-                # cv2.line(frame, (int(left_bottom[0]), int(left_bottom[1])), (int(right_bottom[0]), int(right_bottom[1])), color=(0, 255, 0),
-                #          thickness=2) # Left side
-                # cv2.line(frame, (int(top_left[0]), int(top_left[1])), (int(bottom_left[0]), int(bottom_left[1])), color=(0, 255, 0),
-                #          thickness=2)
-                # cv2.line(frame, (int(top_right[0]), int(top_right[1])), (int(bottom_right[0]), int(bottom_right[1])), color=(0, 255, 0),
-                #          thickness=2)
+                top_left, top_right = top_divisions_flipped[i:i + 2, :]
+                bottom_left, bottom_right = bottom_divisions[i:i + 2, :]
+                left_top, left_bottom = left_divisions_flipped[j:j + 2, :]
+                right_top, right_bottom = right_divisions[j:j + 2, :]
 
                 # Draw lines connecting opposite sides
                 ver_line1 = (int(left_top[0]), int(left_top[1]), int(right_top[0]), int(right_top[1]))
@@ -133,14 +110,10 @@ while True:
                 hor_lines.update([hor_line1, hor_line2])
 
                 # Add outer points of the quadrilateral if they haven't been added yet
-                outer_points = [(int(top_left[0]), int(top_left[1])),
-                                (int(top_right[0]), int(top_right[1])),
-                                (int(bottom_left[0]), int(bottom_left[1])),
-                                (int(bottom_right[0]), int(bottom_right[1])),
-                                (int(left_top[0]), int(left_top[1])),
-                                (int(left_bottom[0]), int(left_bottom[1])),
-                                (int(right_top[0]), int(right_top[1])),
-                                (int(right_bottom[0]), int(right_bottom[1]))]
+                outer_points = [(int(top_left[0]), int(top_left[1])), (int(top_right[0]), int(top_right[1])),
+                                (int(bottom_left[0]), int(bottom_left[1])), (int(bottom_right[0]), int(bottom_right[1])),
+                                (int(left_top[0]), int(left_top[1])), (int(left_bottom[0]), int(left_bottom[1])),
+                                (int(right_top[0]), int(right_top[1])), (int(right_bottom[0]), int(right_bottom[1]))]
 
                 for outer_point in outer_points:
                     if all(np.linalg.norm(np.array(outer_point) - np.array(point)) > 5 for point in
@@ -149,12 +122,8 @@ while True:
 
         for v_line in ver_lines:
             for h_line in hor_lines:
-                start_v = (v_line[0], v_line[1])
-                end_v = (v_line[2], v_line[3])
-                start_h = (h_line[0], h_line[1])
-                end_h = (h_line[2], h_line[3])
-                # cv2.line(frame, start_v, end_v, color=(0, 255, 0), thickness=2)
-                # cv2.line(frame, start_h, end_h, color=(0, 255, 0), thickness=2)
+                # cv2.line(frame, (v_line[0], v_line[1]), (v_line[2], v_line[3]), color=(0, 255, 0), thickness=2)
+                # cv2.line(frame, (h_line[0], h_line[1]), (h_line[2], h_line[3]), color=(0, 255, 0), thickness=2)
                 intersection_point = compute_intersection(v_line, h_line)
                 if intersection_point is not None and all(
                         np.linalg.norm(np.array(intersection_point) - np.array(point)) > 5 for point in
@@ -185,14 +154,9 @@ while True:
                                      (255, 255, 255), -1)
                     cv2.drawContours(cell_rect, [np.array([top_left, top_right, bottom_right, bottom_left])], 0,
                                      (255, 255, 255), -1)
-                    # Apply the masks to the color masks
-                    green_mask_cell = cv2.bitwise_and(green_mask, cell_mask)
-                    black_mask_cell = cv2.bitwise_and(black_mask, cell_mask)
-                    white_mask_cell = cv2.bitwise_and(white_mask, cell_mask)
 
                     # Determine the dominant color
-                    color = determine_dominant_color(frame, green_mask_cell, black_mask_cell, white_mask_cell)
-
+                    color = determine_dominant_color(frame, cell_mask, green_mask, black_mask, white_mask)
                     grid_colors[i][j] = color
 
                     draw_disk(frame, color, top_left, bottom_right)

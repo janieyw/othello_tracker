@@ -45,8 +45,16 @@ def get_green_mask(hsv, kernel):
     green_mask = cv2.morphologyEx(green_mask, cv2.MORPH_CLOSE, kernel)
     return green_mask
 
+def get_color_masks(hsv, kernel):
+    green_mask = get_green_mask(hsv, kernel)
+    black_mask = get_black_mask(hsv, kernel)
+    white_mask = get_white_mask(hsv, kernel)
+    return green_mask, black_mask, white_mask
+
 def find_largest_contour(contours):
     largest_contour = None
+    # Sort contours by area in descending order
+    contours = sorted(contours, key=lambda x: cv2.contourArea(x), reverse=True)
     for contour in contours:
         approx = cv2.approxPolyDP(contour, 0.02 * cv2.arcLength(contour, True), True)
         if len(approx) == 4:
@@ -88,7 +96,12 @@ def define_corner_points(intersection_points, i, j):
     bottom_right = intersection_points[(i + 1) * 9 + j + 1]
     return top_left, top_right, bottom_left, bottom_right
 
-def determine_dominant_color(frame, green_mask_cell, black_mask_cell, white_mask_cell):
+def determine_dominant_color(frame, cell_mask, green_mask, black_mask, white_mask):
+    # Apply the masks to the color masks
+    green_mask_cell = cv2.bitwise_and(green_mask, cell_mask)
+    black_mask_cell = cv2.bitwise_and(black_mask, cell_mask)
+    white_mask_cell = cv2.bitwise_and(white_mask, cell_mask)
+
     # Apply the color masks to the frame
     green_pixels = cv2.bitwise_and(frame, frame, mask=green_mask_cell)
     black_pixels = cv2.bitwise_and(frame, frame, mask=black_mask_cell)
