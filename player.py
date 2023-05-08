@@ -10,7 +10,7 @@ class Player:
     def __del__(self):
         self.hands.close()
 
-    def get_current_player(self, frame):
+    def get_current_player_num(self, frame):
         # Flip the frame horizontally
         frame = cv2.flip(frame, 1)
 
@@ -40,7 +40,4 @@ class Player:
         else:
             self.current_player = None
 
-        return self.current_player
-
-    def get_current_player_num(self):
         return self.current_player

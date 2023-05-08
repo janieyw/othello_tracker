@@ -9,8 +9,6 @@ from talker import print_board, print_line_separator, update_round_result, annou
 
 # Initialize the player identification object
 player = player.Player()
-player_num = None
-player_num_stack = []
 
 # Initialize all disk numbers to 0, except for prev_disk_num
 p1_disk_num, p2_disk_num = 0, 0
@@ -29,27 +27,7 @@ while True:
     # Count the number of disks on the board
     total_disk_num = p1_disk_num + p2_disk_num
 
-    # Identify the current player
-    player.get_current_player(frame)
-
-    # Draw the current player number on the frame
-    player_num = player.get_current_player_num()
-
     p1_disk_num, p2_disk_num = reset_player_disk_num()
-
-    # # Check if the next player number matches the topmost element of the stack
-    # if player_num is not None and player_num == player_num_stack[-1]:
-    #     # Remove the topmost element from the stack
-    #     player_num_stack.pop()
-    # else:
-    #     # Print the "Wrong player turn!" message
-    #     print("Wrong player turn!")
-    #
-    # # Add the current player number to the stack
-    # player_num_stack.append(player_num)
-
-    # Identify the current player
-    player.get_current_player(frame)
 
     # Convert the frame to the HSV color space
     hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
@@ -79,6 +57,9 @@ while True:
         # cv2.drawContours(frame, [largest_contour], 0, (0, 255, 0), 2)
 
         top_left, top_right, bottom_right, bottom_left = largest_contour.reshape(4, 2)
+
+        # Identify the current player
+        player_num = player.get_current_player_num(frame)
 
         # intersection_points.append((top_left[0], top_left[1]))
         # intersection_points.append((top_right[0], top_right[1]))
@@ -236,6 +217,7 @@ while True:
         #     announce_no_play_game_end(grid_colors, p1_disk_num, p2_disk_num)
         #     break
 
+        print(player_num)
         # Display the current player number on the frame if player_num is not None
         if player_num is not None:
             last_hand_detected_time = time.time()
