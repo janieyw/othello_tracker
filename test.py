@@ -10,8 +10,7 @@ from talker import *
 player = player.Player()
 
 # Initialize all disk numbers to 0, except for prev_disk_num
-p1_disk_num, p2_disk_num = 0, 0
-disk_num = 0
+p1_disk_num, p2_disk_num, total_disk_num = 0, 0, 0
 prev_disk_num = -1
 
 # Initialize grid_colors with all '-'
@@ -25,20 +24,16 @@ while True:
 
     # Count the number of disks on the board
     total_disk_num = p1_disk_num + p2_disk_num
-
     p1_disk_num, p2_disk_num = reset_player_disk_num()
 
     # Convert the frame to the HSV color space
     hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
-
     # Apply morphological operations to fill any gaps in the masks
     kernel = np.ones((5, 5), np.uint8)
     green_mask, black_mask, white_mask = get_color_masks(hsv, kernel)
 
-    # Find contours in the mask
-    contours, _ = cv2.findContours(green_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-
     # Find the largest contour
+    contours, _ = cv2.findContours(green_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
     largest_contour = find_largest_contour(contours)
 
     intersection_points = []
@@ -49,48 +44,31 @@ while True:
     # Draw a green outline around the largest contour
     if largest_contour is not None:
         # cv2.drawContours(frame, [largest_contour], 0, (0, 255, 0), 2)
-
         top_left, top_right, bottom_right, bottom_left = largest_contour.reshape(4, 2)
 
         # Identify the current player
         player_num = player.get_current_player_num(frame)
 
-        # intersection_points.append((top_left[0], top_left[1]))
-        # intersection_points.append((top_right[0], top_right[1]))
-        # intersection_points.append((bottom_right[0], bottom_right[1]))
-        # intersection_points.append((bottom_left[0], bottom_left[1]))
+        # Calculate the angles and lengths of the sides
+        top_side_length, top_side_angle = calculate_side_properties(top_left, top_right)
+        right_side_length, right_side_angle = calculate_side_properties(top_right, bottom_right)
+        bottom_side_length, bottom_side_angle = calculate_side_properties(bottom_right, bottom_left)
+        left_side_length, left_side_angle = calculate_side_properties(bottom_left, top_left)
 
-        ver_lines = set()
-        hor_lines = set()
-
-        # Calculate the angles of the sides
-        top_angle = math.atan2(top_right[1] - top_left[1], top_right[0] - top_left[0])
-        bottom_angle = math.atan2(bottom_right[1] - bottom_left[1], bottom_right[0] - bottom_left[0])
-        left_angle = math.atan2(top_left[1] - bottom_left[1], top_left[0] - bottom_left[0])
-        right_angle = math.atan2(top_right[1] - bottom_right[1], top_right[0] - bottom_right[0])
-
-        # Calculate the length and angle of each side of the quadrilateral
-        top_side_length = np.linalg.norm(np.array(top_right) - np.array(top_left))
-        top_side_angle = np.arctan2(top_right[1] - top_left[1], top_right[0] - top_left[0])
-
-        right_side_length = np.linalg.norm(np.array(bottom_right) - np.array(top_right))
-        right_side_angle = np.arctan2(bottom_right[1] - top_right[1], bottom_right[0] - top_right[0])
-
-        bottom_side_length = np.linalg.norm(np.array(bottom_left) - np.array(bottom_right))
-        bottom_side_angle = np.arctan2(bottom_left[1] - bottom_right[1], bottom_left[0] - bottom_right[0])
-
-        left_side_length = np.linalg.norm(np.array(top_left) - np.array(bottom_left))
-        left_side_angle = np.arctan2(top_left[1] - bottom_left[1], top_left[0] - bottom_left[0])
-
+        # Divide each side into GRID_SIZE equal parts
         top_divisions = np.linspace(top_left, top_right, num=GRID_SIZE + 1, endpoint=True)
         right_divisions = np.linspace(top_right, bottom_right, num=GRID_SIZE + 1, endpoint=True)
         bottom_divisions = np.linspace(bottom_right, bottom_left, num=GRID_SIZE + 1, endpoint=True)
         left_divisions = np.linspace(bottom_left, top_left, num=GRID_SIZE + 1, endpoint=True)
 
+        # Flip the left, top, right, and bottom divisions
         left_divisions_flipped = np.flip(left_divisions, axis=0)
         top_divisions_flipped = np.flip(top_divisions, axis=0)
         right_divisions_flipped = np.flip(right_divisions, axis=0)
         bottom_divisions_flipped = np.flip(bottom_divisions, axis=0)
+
+        ver_lines = set()
+        hor_lines = set()
 
         # Draw lines connecting corresponding segments on opposite sides
         for i in range(GRID_SIZE):
@@ -116,8 +94,7 @@ while True:
                                 (int(right_top[0]), int(right_top[1])), (int(right_bottom[0]), int(right_bottom[1]))]
 
                 for outer_point in outer_points:
-                    if all(np.linalg.norm(np.array(outer_point) - np.array(point)) > 5 for point in
-                           intersection_points):
+                    if all(np.linalg.norm(np.array(outer_point) - np.array(point)) > 5 for point in intersection_points):
                         intersection_points.append(outer_point)
 
         for v_line in ver_lines:

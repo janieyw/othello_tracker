@@ -127,3 +127,8 @@ def draw_disk(frame, color, top_left, bottom_right):
         cv2.circle(frame, center, 20, (0, 0, 0), -1)
     elif color == WHITE:
         cv2.circle(frame, center, 20, (255, 255, 255), 2)
+
+def calculate_side_properties(point1, point2):
+    length = np.linalg.norm(np.array(point2) - np.array(point1))
+    angle = np.arctan2(point2[1] - point1[1], point2[0] - point1[0])
+    return length, angle
