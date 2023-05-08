@@ -63,4 +63,5 @@ def announce_no_play_game_end(grid_colors, p1_disk_num, p2_disk_num):
     announce_game_end(p1_disk_num, p2_disk_num)
 
 def print_wrong_player_warning(right_player_num):
-    print(f"Wrong player! Player {right_player_num}'s turn!")
+    if right_player_num is not None:
+        print(f"Wrong player! Player {right_player_num}'s turn!")
