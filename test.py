@@ -28,6 +28,7 @@ while True:
 
     # Convert the frame to the HSV color space
     hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
+
     # Apply morphological operations to fill any gaps in the masks
     kernel = np.ones((5, 5), np.uint8)
     green_mask, black_mask, white_mask = get_color_masks(hsv, kernel)
@@ -41,21 +42,21 @@ while True:
     # Initialize a two-dimensional array to store the corner points of each grid cell
     grid_cells = [['-' for i in range(GRID_SIZE)] for j in range(GRID_SIZE)]
 
+    # Identify the current player
+    player_num = player.get_current_player_num(frame)
+
+    # Check if player_num is the same as prev_player_num, and print "wrong player!" if so
+    if player_num == prev_player_num:
+        right_player_num = player.get_right_player_num(prev_player_num)
+        print_wrong_player_warning(right_player_num)
+
+    # Update prev_player_num to current player_num
+    prev_player_num = player_num
+
     # Draw a green outline around the largest contour
     if largest_contour is not None:
         # cv2.drawContours(frame, [largest_contour], 0, (0, 255, 0), 2)
         top_left, top_right, bottom_right, bottom_left = largest_contour.reshape(4, 2)
-
-        # Identify the current player
-        player_num = player.get_current_player_num(frame)
-
-        # Check if player_num is the same as prev_player_num, and print "wrong player!" if so
-        if player_num == prev_player_num:
-            right_player_num = player.get_right_player_num(prev_player_num)
-            print_wrong_player_warning(right_player_num)
-
-        # Update prev_player_num to current player_num
-        prev_player_num = player_num
 
         # Calculate the angles and lengths of the sides
         top_side_length, top_side_angle = calculate_side_properties(top_left, top_right)
