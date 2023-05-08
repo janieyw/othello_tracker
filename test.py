@@ -15,6 +15,8 @@ prev_player_num = None
 
 # Initialize grid_colors with all '-'
 grid_colors = [[GREEN for _ in range(GRID_SIZE)] for _ in range(GRID_SIZE)]
+prev_grid_colors = None
+player_num_stack = [2]
 
 cap = cv2.VideoCapture(0)  # Use iPhone as webcam
 
@@ -45,13 +47,19 @@ while True:
     # Identify the current player
     player_num = player.get_current_player_num(frame)
 
-    # Check if player_num is the same as prev_player_num, and print "wrong player!" if so
-    if player_num == prev_player_num:
-        right_player_num = player.get_right_player_num(prev_player_num)
-        print_wrong_player_warning(right_player_num)
+    if player_num is not None:
+        # Update prev_player_num to current player_num
+        prev_player_num = player_num
 
-    # Update prev_player_num to current player_num
-    prev_player_num = player_num
+        # Check if player_num is the same as prev_player_num, and print "wrong player!" if so
+        if player_num == player_num_stack[0]:
+            right_player_num = player.get_right_player_num(prev_player_num)
+            print_wrong_player_warning(right_player_num)
+        else:
+            player_num_stack.pop()
+            player_num_stack.append(player_num)
+
+
 
     # Draw a green outline around the largest contour
     if largest_contour is not None:
