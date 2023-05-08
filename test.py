@@ -1,9 +1,8 @@
-import math
 import player
 import time
 from game import last_play_detected_time, last_hand_detected_time
 from constants import BLACK, WHITE, GREEN, TOTAL_DISK_NUM, GRID_SIZE, TIME_LIMIT
-from utils import *
+from board import *
 from talker import *
 
 # Initialize the player identification object
@@ -56,57 +55,18 @@ while True:
         left_side_length, left_side_angle = calculate_side_properties(bottom_left, top_left)
 
         # Divide each side into GRID_SIZE equal parts
-        top_divisions = np.linspace(top_left, top_right, num=GRID_SIZE + 1, endpoint=True)
-        right_divisions = np.linspace(top_right, bottom_right, num=GRID_SIZE + 1, endpoint=True)
-        bottom_divisions = np.linspace(bottom_right, bottom_left, num=GRID_SIZE + 1, endpoint=True)
-        left_divisions = np.linspace(bottom_left, top_left, num=GRID_SIZE + 1, endpoint=True)
+        top_divisions = divide_side_into_segments(top_left, top_right, GRID_SIZE)
+        right_divisions = divide_side_into_segments(top_right, bottom_right, GRID_SIZE)
+        bottom_divisions = divide_side_into_segments(bottom_right, bottom_left, GRID_SIZE)
+        left_divisions = divide_side_into_segments(bottom_left, top_left, GRID_SIZE)
 
         # Flip the left, top, right, and bottom divisions
-        left_divisions_flipped = np.flip(left_divisions, axis=0)
-        top_divisions_flipped = np.flip(top_divisions, axis=0)
-        right_divisions_flipped = np.flip(right_divisions, axis=0)
-        bottom_divisions_flipped = np.flip(bottom_divisions, axis=0)
+        left_divisions_flipped = flip_divisions(left_divisions)
+        top_divisions_flipped = flip_divisions(top_divisions)
+        right_divisions_flipped = flip_divisions(right_divisions)
+        bottom_divisions_flipped = flip_divisions(bottom_divisions)
 
-        ver_lines = set()
-        hor_lines = set()
-
-        # Draw lines connecting corresponding segments on opposite sides
-        for i in range(GRID_SIZE):
-            for j in range(GRID_SIZE):
-                top_left, top_right = top_divisions_flipped[i:i + 2, :]
-                bottom_left, bottom_right = bottom_divisions[i:i + 2, :]
-                left_top, left_bottom = left_divisions_flipped[j:j + 2, :]
-                right_top, right_bottom = right_divisions[j:j + 2, :]
-
-                # Draw lines connecting opposite sides
-                ver_line1 = (int(left_top[0]), int(left_top[1]), int(right_top[0]), int(right_top[1]))
-                ver_line2 = (int(left_bottom[0]), int(left_bottom[1]), int(right_bottom[0]), int(right_bottom[1]))
-                hor_line1 = (int(top_left[0]), int(top_left[1]), int(bottom_left[0]), int(bottom_left[1]))
-                hor_line2 = (int(top_right[0]), int(top_right[1]), int(bottom_right[0]), int(bottom_right[1]))
-
-                ver_lines.update([ver_line1, ver_line2])
-                hor_lines.update([hor_line1, hor_line2])
-
-                # Add outer points of the quadrilateral if they haven't been added yet
-                outer_points = [(int(top_left[0]), int(top_left[1])), (int(top_right[0]), int(top_right[1])),
-                                (int(bottom_left[0]), int(bottom_left[1])), (int(bottom_right[0]), int(bottom_right[1])),
-                                (int(left_top[0]), int(left_top[1])), (int(left_bottom[0]), int(left_bottom[1])),
-                                (int(right_top[0]), int(right_top[1])), (int(right_bottom[0]), int(right_bottom[1]))]
-
-                for outer_point in outer_points:
-                    if all(np.linalg.norm(np.array(outer_point) - np.array(point)) > 5 for point in intersection_points):
-                        intersection_points.append(outer_point)
-
-        for v_line in ver_lines:
-            for h_line in hor_lines:
-                # cv2.line(frame, (v_line[0], v_line[1]), (v_line[2], v_line[3]), color=(0, 255, 0), thickness=2)
-                # cv2.line(frame, (h_line[0], h_line[1]), (h_line[2], h_line[3]), color=(0, 255, 0), thickness=2)
-                intersection_point = compute_intersection(v_line, h_line)
-                if intersection_point is not None and all(
-                        np.linalg.norm(np.array(intersection_point) - np.array(point)) > 5 for point in
-                        intersection_points):
-                    intersection_points.append(intersection_point)
-
+        intersection_points = find_intersection_points(top_divisions_flipped, bottom_divisions, left_divisions_flipped, right_divisions)
         intersection_points = sorted(intersection_points, key=lambda p: (p[1], p[0]))
 
         # Display intersection points in gradient, while incrementing blue value and decrementing red value
