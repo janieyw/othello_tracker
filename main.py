@@ -101,7 +101,7 @@ while True:
                 Talker.display_one_disk_only_warning(frame)
 
             # Display a warning if no disks were added on the current turn
-            if total_disk_num <= prev_total_disk_num:
+            elif total_disk_num <= prev_total_disk_num:
                 Talker.display_add_to_empty_cell_warning(frame)
 
             # Display a warning if the wrong color was added on the current turn
