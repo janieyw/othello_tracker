@@ -61,30 +61,8 @@ while True:
 
     # Draw a green outline around the largest contour
     if largest_contour is not None:
-        # cv2.drawContours(frame, [largest_contour], 0, (0, 255, 0), 2)
-        top_left, top_right, bottom_right, bottom_left = largest_contour.reshape(4, 2)
 
-        # Calculate the angles and lengths of the sides
-        top_side_length, top_side_angle = calculate_side_properties(top_left, top_right)
-        right_side_length, right_side_angle = calculate_side_properties(top_right, bottom_right)
-        bottom_side_length, bottom_side_angle = calculate_side_properties(bottom_right, bottom_left)
-        left_side_length, left_side_angle = calculate_side_properties(bottom_left, top_left)
-
-        # Divide each side into GRID_SIZE equal parts
-        top_divisions = divide_side_into_segments(top_left, top_right, GRID_SIZE)
-        right_divisions = divide_side_into_segments(top_right, bottom_right, GRID_SIZE)
-        bottom_divisions = divide_side_into_segments(bottom_right, bottom_left, GRID_SIZE)
-        left_divisions = divide_side_into_segments(bottom_left, top_left, GRID_SIZE)
-
-        # Flip the left, top, right, and bottom divisions
-        left_divisions_flipped = flip_divisions(left_divisions)
-        top_divisions_flipped = flip_divisions(top_divisions)
-        right_divisions_flipped = flip_divisions(right_divisions)
-        bottom_divisions_flipped = flip_divisions(bottom_divisions)
-
-        intersection_points = find_intersection_points(top_divisions_flipped, bottom_divisions, left_divisions_flipped, right_divisions)
-        intersection_points = sorted(intersection_points, key=lambda p: (p[1], p[0]))
-
+        intersection_points = process_contour(largest_contour, GRID_SIZE)
         # Display intersection points in gradient, while incrementing blue value and decrementing red value
         display_in_gradient(frame, intersection_points, 0, 255)
 
@@ -145,10 +123,7 @@ while True:
 
         # Check for 'space' key press to print out grid_colors
         if cv2.waitKey(1) & 0xFF == ord(' '):
-            print_board(grid_colors)
-            print_line_separator()
-            update_round_result(p1_disk_num, p2_disk_num)
-            print_line_separator()
+            print_grid_colors_for_space(grid_colors, p1_disk_num, p2_disk_num)
 
         # Check for 's' key press to analyze
         if cv2.waitKey(1) & 0xFF == ord('s'):

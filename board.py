@@ -208,3 +208,31 @@ def disk_added_to_empty_cell(prev_grid_colors, grid_colors):
         if grid_colors[i][j] != prev_grid_colors[i][j] and (i, j) != added_empty_cell:
             return False
     return True
+
+def process_contour(largest_contour, GRID_SIZE):
+    # Get the four corners of the largest contour
+    top_left, top_right, bottom_right, bottom_left = largest_contour.reshape(4, 2)
+
+    # # Calculate the angles and lengths of the sides
+    # top_side_length, top_side_angle = calculate_side_properties(top_left, top_right)
+    # right_side_length, right_side_angle = calculate_side_properties(top_right, bottom_right)
+    # bottom_side_length, bottom_side_angle = calculate_side_properties(bottom_right, bottom_left)
+    # left_side_length, left_side_angle = calculate_side_properties(bottom_left, top_left)
+
+    # Divide each side into GRID_SIZE equal parts
+    top_divisions = divide_side_into_segments(top_left, top_right, GRID_SIZE)
+    right_divisions = divide_side_into_segments(top_right, bottom_right, GRID_SIZE)
+    bottom_divisions = divide_side_into_segments(bottom_right, bottom_left, GRID_SIZE)
+    left_divisions = divide_side_into_segments(bottom_left, top_left, GRID_SIZE)
+
+    # Flip the left, top, right, and bottom divisions
+    left_divisions_flipped = flip_divisions(left_divisions)
+    top_divisions_flipped = flip_divisions(top_divisions)
+    # right_divisions_flipped = flip_divisions(right_divisions)
+    # bottom_divisions_flipped = flip_divisions(bottom_divisions)
+
+    # Find the intersection points of the grid lines
+    intersection_points = find_intersection_points(top_divisions_flipped, bottom_divisions, left_divisions_flipped, right_divisions)
+    intersection_points = sorted(intersection_points, key=lambda p: (p[1], p[0]))
+
+    return intersection_points

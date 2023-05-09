@@ -71,3 +71,9 @@ def print_one_disk_only_warning():
 
 def print_add_to_empty_cell_warning():
     print(f"Disk should be placed only in an empty cell!")
+
+def print_grid_colors_for_space(grid_colors, p1_disk_num, p2_disk_num):
+    print_board(grid_colors)
+    print_line_separator()
+    update_round_result(p1_disk_num, p2_disk_num)
+    print_line_separator()
