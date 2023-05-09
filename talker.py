@@ -1,3 +1,4 @@
+import cv2
 class Talker:
     @staticmethod
     def print_board(grid_colors):
@@ -77,21 +78,32 @@ class Talker:
         Talker.announce_game_end(p1_disk_num, p2_disk_num)
 
     @staticmethod
-    def print_wrong_player_warning(right_player_num):
+    def display_wrong_player_warning(frame, right_player_num):
         if right_player_num is not None:
-            print(f"WARNING: Player {right_player_num}'s turn!")
+            cv2.putText(frame, f"WARNING: Player {right_player_num}'s turn!", (25, 115), cv2.FONT_HERSHEY_DUPLEX, 2,
+                        (0, 0, 255), 2, cv2.LINE_AA)
 
     @staticmethod
-    def print_one_disk_only_warning():
-        print("WARNING: Only 1 disk at a time!")
+    def display_one_disk_only_warning(frame):
+        cv2.putText(frame, "WARNING: Only 1 disk at a time!", (25, 165), cv2.FONT_HERSHEY_DUPLEX, 2, (0, 0, 255), 2,
+                    cv2.LINE_AA)
 
     @staticmethod
-    def print_add_to_empty_cell_warning():
-        print("WARNING: Place disk only in an empty cell!")
+    def display_wrong_color_warning(frame):
+        cv2.putText(frame, "WARNING: Wrong color!", (25, 165), cv2.FONT_HERSHEY_DUPLEX, 2, (0, 0, 255), 2,
+                    cv2.LINE_AA)
 
+    @staticmethod
+    def display_add_to_empty_cell_warning(frame):
+        cv2.putText(frame, "WARNING: Place disk only in an empty cell!", (25, 165), cv2.FONT_HERSHEY_DUPLEX, 2,
+                    (0, 0, 255), 2, cv2.LINE_AA)
     @staticmethod
     def print_grid_colors_for_space(grid_colors, p1_disk_num, p2_disk_num):
         Talker.print_board(grid_colors)
         Talker.print_line_separator()
         Talker.update_round_result(p1_disk_num, p2_disk_num)
         Talker.print_line_separator()
+
+    @staticmethod
+    def display_player_num(frame, player_num):
+        cv2.putText(frame, f"Player {player_num}", (25, 65), cv2.FONT_HERSHEY_DUPLEX, 2, (0, 255, 0), 2, cv2.LINE_AA)

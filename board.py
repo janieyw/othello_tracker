@@ -97,9 +97,6 @@ class BoardDetector:
     def reset_player_disk_num(self):
         return 0, 0
 
-    def display_player_num(self, frame, player_num):
-        cv2.putText(frame, f"Player {player_num}", (25, 65), cv2.FONT_HERSHEY_DUPLEX, 2, (0, 255, 0), 2, cv2.LINE_AA)
-
     def draw_grid_cell(self, frame, top_left, bottom_right):
         cv2.rectangle(frame, top_left, bottom_right, (0, 255, 0), 2)
 
@@ -266,3 +263,17 @@ class BoardDetector:
         intersection_points = sorted(intersection_points, key=lambda p: (p[1], p[0]))
 
         return intersection_points
+
+    def get_disk_added_cell(self, prev_grid_colors, grid_colors):
+        for i in range(GRID_SIZE):
+            for j in range(GRID_SIZE):
+                if prev_grid_colors[i][j] != grid_colors[i][j]:
+                    return grid_colors[i][j]
+
+    def wrong_color_added(self, prev_player_num, disk_added_cell):
+        if prev_player_num is not None:
+            if prev_player_num == 1 and disk_added_cell == BLACK:
+                return True
+            elif prev_player_num == 2 and disk_added_cell == WHITE:
+                return True
+        return False

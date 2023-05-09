@@ -53,7 +53,7 @@ while True:
         # Check if player_num is the same as prev_player_num, and print "wrong player!" if so
         if player_num == prev_player_num:
             right_player_num = player.get_right_player_num(prev_player_num)
-            Talker.print_wrong_player_warning(right_player_num)
+            Talker.display_wrong_player_warning(frame, right_player_num)
         else:
             player_num_stack.pop()
             player_num_stack.append(player_num)
@@ -93,10 +93,15 @@ while True:
             prev_total_disk_num, prev_p1_disk_num, prev_p2_disk_num = detector.count_disks(prev_grid_colors)
 
             if total_disk_num != prev_total_disk_num + 1:
-                Talker.print_one_disk_only_warning()
+                Talker.display_one_disk_only_warning()
 
-            elif not detector.disk_added_to_empty_cell(prev_grid_colors, grid_colors):
-                Talker.print_add_to_empty_cell_warning()
+            else:
+                disk_added_cell = detector.get_disk_added_cell(prev_grid_colors, grid_colors)
+                if detector.wrong_color_added(prev_player_num, disk_added_cell):
+                    Talker.display_wrong_color_warning()
+
+            if not detector.disk_added_to_empty_cell(prev_grid_colors, grid_colors):
+                Talker.display_add_to_empty_cell_warning()
 
         # End the game if no hand has been detected or no disk has been added for 30 seconds
         if time.time() - last_hand_detected_time > TIME_LIMIT:
@@ -113,7 +118,7 @@ while True:
         # Display the current player number on the frame if player_num is not None
         if player_num is not None:
             last_hand_detected_time = time.time()
-            detector.display_player_num(frame, player_num)
+            Talker.display_player_num(frame, player_num)
 
         # Check for 'space' key press to print out grid_colors
         if cv2.waitKey(1) & 0xFF == ord(' '):
@@ -130,7 +135,7 @@ while True:
     cv2.imshow('Othello Tracker', frame)
 
     # Check for 'q' key press to exit
-    if cv2.waitKey(1) & 0xFF == ord('q'):
+    if cv2.waitKey(1) & 0xFF == ord('q') or total_disk_num >= 64:
         Talker.announce_game_end(p1_disk_num, p2_disk_num)
         break
 
