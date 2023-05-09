@@ -249,8 +249,6 @@ class BoardDetector:
         # Flip the left, top, right, and bottom divisions
         left_divisions_flipped = self.flip_divisions(left_divisions)
         top_divisions_flipped = self.flip_divisions(top_divisions)
-        # right_divisions_flipped = flip_divisions(right_divisions)
-        # bottom_divisions_flipped = flip_divisions(bottom_divisions)
 
         # Find the intersection points of the grid lines
         intersection_points = self.find_intersection_points(top_divisions_flipped, bottom_divisions, left_divisions_flipped, right_divisions)
