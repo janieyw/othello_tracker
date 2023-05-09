@@ -1,8 +1,6 @@
-import board
-import player
+import board, player
+import cv2, numpy as np
 import time
-import cv2
-import numpy as np
 from game import last_play_detected_time, last_hand_detected_time
 from constants import *
 from talker import Talker
@@ -14,9 +12,9 @@ detector = board.BoardDetector()
 p1_disk_num, p2_disk_num, total_disk_num = 0, 0, 0
 # prev_disk_num = -1
 
-player_num_stack = [-1]
+player_num_stack = [1]
 
-prev_player_num = None
+prev_player_num = 2
 prev_grid_colors = None
 prev_grid_colors_need_update = False
 
@@ -48,20 +46,31 @@ while True:
     # Identify the current player
     player_num = player.get_current_player_num(frame)
 
-    if player_num is not -1:
+    if player_num is not None:
+        player_num_stack.append(player_num)
+
+    if player_num_stack[0] == -1:
         # Update prev_player_num to current player_num
         while player_num_stack[0] == -1:
             player_num_stack.pop()
 
-        prev_player_num = player_num_stack[0]
+        if player_num_stack[0] != -1:
+            prev_player_num = player_num_stack.pop()
+
+            while player_num_stack[0] != -1:
+                player_num_stack.pop()
 
         # Check if player_num is the same as prev_player_num
         if player_num == prev_player_num:
             right_player_num = player.get_right_player_num(prev_player_num)
             Talker.display_wrong_player_warning(frame, right_player_num)
+
         else:
             player_num_stack.pop()
             player_num_stack.append(player_num)
+
+    print("curr", player_num)
+    print("prev", prev_player_num)
 
     # Check if the largest contour has been detected
     if largest_contour is not None:
