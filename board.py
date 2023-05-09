@@ -216,17 +216,27 @@ class BoardDetector:
         return total_disk_num, p1_disk_num, p2_disk_num
 
     def disk_added_to_empty_cell(self, prev_grid_colors, grid_colors):
-        prev_empty_cells = [(i, j) for i in range(len(prev_grid_colors)) for j in range(len(prev_grid_colors[0])) if prev_grid_colors[i][j] == 0]
-        curr_empty_cells = [(i, j) for i in range(len(grid_colors)) for j in range(len(grid_colors[0])) if grid_colors[i][j] == 0]
+        prev_empty_cells = [(i, j) for i in range(len(prev_grid_colors)) for j in range(len(prev_grid_colors[0])) if
+                            prev_grid_colors[i][j] == 0]
+        curr_empty_cells = [(i, j) for i in range(len(grid_colors)) for j in range(len(grid_colors[0])) if
+                            grid_colors[i][j] == 0]
         if len(curr_empty_cells) - len(prev_empty_cells) != 1:
             return False
         added_empty_cell = set(curr_empty_cells) - set(prev_empty_cells)
         if len(added_empty_cell) != 1:
             return False
         added_empty_cell = added_empty_cell.pop()
-        for i, j in prev_empty_cells:
-            if grid_colors[i][j] != prev_grid_colors[i][j] and (i, j) != added_empty_cell:
-                return False
+
+        # create a copy of prev_grid_colors with one additional non-empty element
+        new_grid_colors = [row.copy() for row in prev_grid_colors]
+        for i, j in added_empty_cell:
+            new_grid_colors[i][j] = 1
+
+        # compare new_grid_colors with grid_colors
+        for i in range(len(grid_colors)):
+            for j in range(len(grid_colors[0])):
+                if grid_colors[i][j] != new_grid_colors[i][j]:
+                    return False
         return True
 
     def extract_intersection_points(self, largest_contour, GRID_SIZE):

@@ -95,7 +95,7 @@ while True:
             if total_disk_num != prev_total_disk_num + 1:
                 Talker.print_one_disk_only_warning()
 
-            if not detector.disk_added_to_empty_cell(prev_grid_colors, grid_colors):
+            elif not detector.disk_added_to_empty_cell(prev_grid_colors, grid_colors):
                 Talker.print_add_to_empty_cell_warning()
 
         # End the game if no hand has been detected or no disk has been added for 30 seconds
