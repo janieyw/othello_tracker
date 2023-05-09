@@ -240,12 +240,6 @@ class BoardDetector:
         # Get the four corners of the largest contour
         top_left, top_right, bottom_right, bottom_left = largest_contour.reshape(4, 2)
 
-        # # Calculate the angles and lengths of the sides
-        # top_side_length, top_side_angle = calculate_side_properties(top_left, top_right)
-        # right_side_length, right_side_angle = calculate_side_properties(top_right, bottom_right)
-        # bottom_side_length, bottom_side_angle = calculate_side_properties(bottom_right, bottom_left)
-        # left_side_length, left_side_angle = calculate_side_properties(bottom_left, top_left)
-
         # Divide each side into GRID_SIZE equal parts
         top_divisions = self.divide_side_into_segments(top_left, top_right, GRID_SIZE)
         right_divisions = self.divide_side_into_segments(top_right, bottom_right, GRID_SIZE)

@@ -11,14 +11,13 @@ detector = board.BoardDetector()
 
 # Initialize all disk numbers to 0, except for prev_disk_num
 p1_disk_num, p2_disk_num, total_disk_num = 0, 0, 0
-prev_disk_num = -1
-prev_player_num = None
-prev_grid_colors_need_update = False
+# prev_disk_num = -1
 
-# Initialize grid_colors with all '-'
-grid_colors = [[GREEN for _ in range(GRID_SIZE)] for _ in range(GRID_SIZE)]
-prev_grid_colors = None
 player_num_stack = [-1]
+
+prev_player_num = None
+prev_grid_colors = None
+prev_grid_colors_need_update = False
 
 cap = cv2.VideoCapture(0)  # Use iPhone as webcam
 
@@ -33,6 +32,7 @@ while True:
 
     # Apply morphological operations to fill any gaps in the masks
     kernel = np.ones((5, 5), np.uint8)
+
     green_mask, black_mask, white_mask = detector.get_color_masks(hsv, kernel)
 
     # Find the largest contour
@@ -40,33 +40,35 @@ while True:
 
     intersection_points = []
 
-    # Initialize a two-dimensional array to store the corner points of each grid cell
-    grid_cells = [['-' for i in range(GRID_SIZE)] for j in range(GRID_SIZE)]
+    # Initialize two 2D array to detect grid cells and grid colors, respectively
+    grid_cells = grid_colors = [[GREEN for _ in range(GRID_SIZE)] for _ in range(GRID_SIZE)]
 
     # Identify the current player
     player_num = player.get_current_player_num(frame)
 
-    if player_num is not None:
+    if player_num is not -1:
         # Update prev_player_num to current player_num
+        while player_num_stack[0] == -1:
+            player_num_stack.pop()
+
         prev_player_num = player_num_stack[0]
 
-        # Check if player_num is the same as prev_player_num, and print "wrong player!" if so
-        if player_num == prev_player_num and player_num != -1 and prev_player_num != -1:
+        # Check if player_num is the same as prev_player_num
+        if player_num == prev_player_num:
             right_player_num = player.get_right_player_num(prev_player_num)
             Talker.display_wrong_player_warning(frame, right_player_num)
         else:
             player_num_stack.pop()
             player_num_stack.append(player_num)
 
-    # Draw a green outline around the largest contour
     if largest_contour is not None:
 
         intersection_points = detector.extract_intersection_points(largest_contour, GRID_SIZE)
+
         # Display intersection points in gradient, while incrementing blue value and decrementing red value
         detector.display_in_gradient(frame, intersection_points, 0, 255)
 
         if len(intersection_points) == 81:
-
             for i in range(GRID_SIZE):
                 for j in range(GRID_SIZE):
                     top_left, top_right, bottom_left, bottom_right = detector.define_corner_points(intersection_points, i, j)
@@ -105,7 +107,6 @@ while True:
             player_num = None
             Talker.announce_no_hand_game_end(grid_colors, p1_disk_num, p2_disk_num)
             break
-
         # # End the game if no disk has been added for 30 seconds
         # if total_disk_num == prev_disk_num and time.time() - last_play_detected_time > TIME_LIMIT:
         #     player_num = None
@@ -125,14 +126,14 @@ while True:
         if cv2.waitKey(1) & 0xFF == ord('s'):
             prev_grid_colors_need_update = True
 
-        # Update the prev_disk_num variable
-        prev_disk_num = total_disk_num
+        # # Update the prev_disk_num variable
+        # prev_disk_num = total_disk_num
 
     # Display the resulting frame
     cv2.imshow('Othello Tracker', frame)
 
     # Check for 'q' key press to exit
-    if cv2.waitKey(1) & 0xFF == ord('q') or total_disk_num >= 64:
+    if cv2.waitKey(1) & 0xFF == ord('q') or total_disk_num >= TOTAL_DISK_NUM:
         Talker.announce_game_end(p1_disk_num, p2_disk_num)
         break
 
