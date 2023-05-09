@@ -65,3 +65,9 @@ def announce_no_play_game_end(grid_colors, p1_disk_num, p2_disk_num):
 def print_wrong_player_warning(right_player_num):
     if right_player_num is not None:
         print(f"Wrong player! Player {right_player_num}'s turn!")
+
+def print_one_disk_only_warning():
+    print(f"Only 1 disk should be placed at a time!")
+
+def print_add_to_empty_cell_warning():
+    print(f"Disk should be placed only in an empty cell!")

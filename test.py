@@ -12,6 +12,7 @@ player = player.Player()
 p1_disk_num, p2_disk_num, total_disk_num = 0, 0, 0
 prev_disk_num = -1
 prev_player_num = None
+prev_grid_colors_need_update = False
 
 # Initialize grid_colors with all '-'
 grid_colors = [[GREEN for _ in range(GRID_SIZE)] for _ in range(GRID_SIZE)]
@@ -24,8 +25,6 @@ while True:
     # Read a frame from the video capture device
     ret, frame = cap.read()
 
-    # Count the number of disks on the board
-    total_disk_num = p1_disk_num + p2_disk_num
     p1_disk_num, p2_disk_num = reset_player_disk_num()
 
     # Convert the frame to the HSV color space
@@ -49,17 +48,16 @@ while True:
 
     if player_num is not None:
         # Update prev_player_num to current player_num
-        prev_player_num = player_num
+        prev_player_num = player_num_stack[0]
 
         # Check if player_num is the same as prev_player_num, and print "wrong player!" if so
-        if player_num == player_num_stack[0]:
+        if player_num == prev_player_num:
             right_player_num = player.get_right_player_num(prev_player_num)
             print_wrong_player_warning(right_player_num)
         else:
             player_num_stack.pop()
             player_num_stack.append(player_num)
-
-
+            # update grid colors
 
     # Draw a green outline around the largest contour
     if largest_contour is not None:
@@ -114,13 +112,19 @@ while True:
 
                     draw_disk(frame, color, top_left, bottom_right)
 
-        # Loop through the grid_colors array
-        for i in range(GRID_SIZE):
-            for j in range(GRID_SIZE):
-                if grid_colors[i][j] == BLACK:
-                    p1_disk_num += 1
-                elif grid_colors[i][j] == WHITE:
-                    p2_disk_num += 1
+        if prev_grid_colors_need_update:
+            prev_grid_colors = grid_colors
+
+        total_disk_num, p1_disk_num, p2_disk_num = count_disks(grid_colors)
+
+        if prev_grid_colors is not None:
+            prev_total_disk_num, prev_p1_disk_num, prev_p2_disk_num = count_disks(prev_grid_colors)
+
+            if total_disk_num != prev_total_disk_num + 1:
+                print_one_disk_only_warning()
+
+            if not disk_added_to_empty_cell(prev_grid_colors, grid_colors):
+                print_add_to_empty_cell_warning()
 
         # End the game if no hand has been detected or no disk has been added for 30 seconds
         if time.time() - last_hand_detected_time > TIME_LIMIT:
@@ -139,12 +143,16 @@ while True:
             last_hand_detected_time = time.time()
             display_player_num(frame, player_num)
 
-        # Print out the color information for each grid cell
+        # Check for 'space' key press to print out grid_colors
         if cv2.waitKey(1) & 0xFF == ord(' '):
             print_board(grid_colors)
             print_line_separator()
             update_round_result(p1_disk_num, p2_disk_num)
             print_line_separator()
+
+        # Check for 's' key press to analyze
+        if cv2.waitKey(1) & 0xFF == ord('s'):
+            prev_grid_colors_need_update = True
 
         # Update the prev_disk_num variable
         prev_disk_num = total_disk_num
