@@ -92,15 +92,15 @@ while True:
             prev_total_disk_num, prev_p1_disk_num, prev_p2_disk_num = detector.count_disks(prev_grid_colors)
 
             if total_disk_num != prev_total_disk_num + 1:
-                Talker.display_one_disk_only_warning()
+                Talker.display_one_disk_only_warning(frame)
 
             else:
                 disk_added_cell = detector.get_disk_added_cell(prev_grid_colors, grid_colors)
                 if detector.wrong_color_added(prev_player_num, disk_added_cell):
-                    Talker.display_wrong_color_warning()
+                    Talker.display_wrong_color_warning(frame)
 
             if not detector.disk_added_to_empty_cell(prev_grid_colors, grid_colors):
-                Talker.display_add_to_empty_cell_warning()
+                Talker.display_add_to_empty_cell_warning(frame)
 
         # End the game if no hand has been detected or no disk has been added for 30 seconds
         if time.time() - last_hand_detected_time > TIME_LIMIT:
