@@ -2,7 +2,7 @@ import board
 import player
 import time
 from game import last_play_detected_time, last_hand_detected_time
-from constants import BLACK, WHITE, GREEN, TOTAL_DISK_NUM, GRID_SIZE, TIME_LIMIT
+from constants import *
 from board import *
 from talker import Talker
 
