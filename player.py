@@ -53,7 +53,7 @@ class Player:
             else:
                 self.current_player = 1
         else:
-            self.current_player = None
+            self.current_player = -1
 
         return self.current_player
 

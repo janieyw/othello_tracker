@@ -18,7 +18,7 @@ prev_grid_colors_need_update = False
 # Initialize grid_colors with all '-'
 grid_colors = [[GREEN for _ in range(GRID_SIZE)] for _ in range(GRID_SIZE)]
 prev_grid_colors = None
-player_num_stack = [2]
+player_num_stack = [-1]
 
 cap = cv2.VideoCapture(0)  # Use iPhone as webcam
 
@@ -51,13 +51,12 @@ while True:
         prev_player_num = player_num_stack[0]
 
         # Check if player_num is the same as prev_player_num, and print "wrong player!" if so
-        if player_num == prev_player_num:
+        if player_num == prev_player_num and player_num != -1 and prev_player_num != -1:
             right_player_num = player.get_right_player_num(prev_player_num)
             Talker.display_wrong_player_warning(frame, right_player_num)
         else:
             player_num_stack.pop()
             player_num_stack.append(player_num)
-            # update grid colors
 
     # Draw a green outline around the largest contour
     if largest_contour is not None:
