@@ -1,2 +1,2 @@
 # othello_tracker
-The project aims to create a system using OpenCV and Python that can detect the cells and disks on an Othello board and track the scores for both players in real time by analyzing a live video feed of the game.
+This project aims to develop a real-time scoring and tracking system for Othello players by analyzing a live video feed of the physical game board using OpenCV and Python. The system will identify the cells and disks on the board and display scores for both players. Additionally, it will detect when players' hands approach from opposite sides of the board to indicate when it's time to switch turns. If an illegal move occurs, the system will prompt the player to replay by undoing the move and making a new, legal one.
